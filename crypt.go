@@ -16,8 +16,11 @@ var (
 
 // Override allows you to override default hash creation settings.
 // Set a value to -1 to persist default(s).
-// *note*: that defaults are `uint32`.
-func Override(hashMemSize int64, hashTime int64, hashKeyLength int64) {
+//
+// *note*: that defaults are `uint32` with exception to the int32
+// hashThreadCount is stored to.  By default defaultHashThreadCount
+// is set using runtime.NumCUP() internally.
+func Override(hashMemSize, hashTime, hashKeyLength, hashThreadCount int64) {
 	if hashMemSize != -1 {
 		defaultHashMem = uint32(hashMemSize)
 	}
@@ -26,6 +29,9 @@ func Override(hashMemSize int64, hashTime int64, hashKeyLength int64) {
 	}
 	if hashKeyLength != -1 {
 		defaultHashKeyLen = uint32(hashKeyLength)
+	}
+	if hashThreadCount != -1 {
+		defaultHashThread = int32(hashThreadCount)
 	}
 }
 
