@@ -1,6 +1,6 @@
 [working-example]:              https://github.com/tfwio/sekhem/blob/cd0c5c5021683d424ff9b351b7a6258f7f2e5bde/fsindex/config/serve.logon.go
 [crypt.cli/sess.go]:            crypt.cli/sess.go
-[setdefaults]:                  https://github.com/tfwio/session/blob/16e442ee2d7bb51873e2741dd5aa98f0751abbe4/configs.go#L27
+[setdefaults]:                  https://github.com/tfwio/session/blob/bb6bd69e91f3ca4ef880e5f216fe25c3febd5912/configs.go#L27
 [crypt-override]:               https://github.com/tfwio/session/blob/16e442ee2d7bb51873e2741dd5aa98f0751abbe4/crypt.go#L20
 [ClientIP]:                     https://github.com/gin-gonic/gin/blob/f98b339b773105aad77f321d0baaa30475bf875d/context.go#L690
 [GORM]:                         https://github.com/jinzhu/gorm
