@@ -82,3 +82,17 @@ func (s *Session) Save() bool {
 	db.Save(s)
 	return db.RowsAffected > 0
 }
+
+// ListSessions returns a list of all sessions.
+//
+// The method first fetches a list of User elements
+// then reports the Sessions with user-data (name).
+func ListSessions() ([]Session, int) {
+	sessions := []Session{}
+	db, err := iniC("error(session-cli-list) loading db\n")
+	defer db.Close()
+	if !err {
+		db.Find(&sessions)
+	}
+	return sessions, len(sessions)
+}
