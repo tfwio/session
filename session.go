@@ -33,9 +33,17 @@ func (s *Session) IsValid() bool {
 
 // Refresh will update the `Session.Expires` date AND
 // the `SessID` with new values.
-func (s *Session) Refresh(andSave bool) {
+//
+// Set cookieAgeHours to -1 to fallback to `defaultCookieAgeHours`.
+//
+// if andSave is true, the record is updated in the database.
+func (s *Session) Refresh(cookieAgeHours int, andSave bool) {
 	s.Created = time.Now()
-	s.Expires = s.Created.Add(durationHrs(cookieAgeHrs))
+	hrs := defaultCookieAgeHours
+	if cookieAgeHours != -1 {
+		hrs = cookieAgeHours
+	}
+	s.Expires = s.Created.Add(durationHrs(hrs))
 	s.SessID = toUBase64(NewSaltString(saltsize))
 	if andSave {
 		s.Save()
