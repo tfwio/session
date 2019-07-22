@@ -20,7 +20,7 @@ func (User) TableName() string {
 	return "users"
 }
 
-// UserGetList gets a map of all `User`s
+// UserGetList gets a map of all `User`s by ID.
 func UserGetList() map[int64]User {
 	var users []User
 	usermap := make(map[int64]User)
