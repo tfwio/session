@@ -12,7 +12,7 @@ var (
 	datasource              string
 	datasys                 string
 	saltsize                = 48
-	defaultSessionLength, _ = time.ParseDuration("2h")
+	defaultSessionLength, _ = time.ParseDuration("12h")
 	unknownclient           = "unknown-client"
 	dataLogging             = false
 )
@@ -39,7 +39,7 @@ func SetDefaults(source string, sys string, saltSize int, hashKeyLen int) {
 
 // returns calculated duration or on error the default session length '2hr'
 func durationHrs(hr int) time.Duration {
-	if result, err := time.ParseDuration(fmt.Sprintf("%vh", hr)); err != nil {
+	if result, err := time.ParseDuration(fmt.Sprintf("%vh", hr)); err == nil {
 		return result
 	}
 	return defaultSessionLength
