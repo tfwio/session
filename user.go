@@ -67,15 +67,25 @@ func (u *User) ByID(id int64) bool {
 }
 
 // CreateSession32 creates sessioni with a default salt size.
-func (u *User) CreateSession32(r *gin.Context, hours int, host string) (bool, Session) {
+//
+// the `r interface{}` is expected to be a `*gin.Context` so that
+// we can provide the sessions table a client IP for the `[cli-key]` column.
+func (u *User) CreateSession32(r interface{}, hours int, host string) (bool, Session) {
 	return u.CreateSession(r, hours, host, 32)
 }
 
-// CreateSession is a test to attempt to save a session into the sessions table.
+// CreateSession Save a session into the sessions table.
+//
+// The method is written to utilize gin-gonic/gin `*gin.Context` as
+// its suggested input interface given that we can use it to retrieve
+// the ClientIP() and store that value to our database in order to
+// validate a given user-session.
+//
+// Currently, a user is limited to one session (connection) on one client.
 //
 // FIXME: we should be checking if there is a existing record in sessions table
 // and re-using it for the user executing UPDATE as opposed to CREATE.
-func (u *User) CreateSession(r *gin.Context, hours int, host string, saltSize int) (bool, Session) {
+func (u *User) CreateSession(r interface{}, hours int, host string, saltSize int) (bool, Session) {
 
 	t := time.Now()
 	ss := saltsize
