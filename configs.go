@@ -23,12 +23,15 @@ func SetDataLogging(value bool) {
 }
 
 // SetDefaults allows a external library to set the local datasource.
-// Set saltSize to -1 to persist default.
-func SetDefaults(source string, sys string, saltSize int) {
+// Set saltSize or heshKeyLen to -1 to persist default(s).
+func SetDefaults(source string, sys string, saltSize int, hashKeyLen int) {
 	datasource = source
 	datasys = sys
 	if saltSize != -1 {
 		saltsize = saltSize
+	}
+	if hashKeyLen != -1 {
+		defaultHashKeyLen = uint32(hashKeyLen)
 	}
 	EnsureTableUsers()
 	EnsureTableSessions()
