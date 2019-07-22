@@ -1,5 +1,5 @@
 // Package session works with GORM to enable `http.Cookie`s,
-// `Session` and `User` capability --- along with gogonic/gin.
+// `Session` and `User` capability --- along with [gin-gonic/gin](https://github.com/gin-gonic/gin).
 //
 // This includes some cryptography that allows for a user's password
 // and verification.
