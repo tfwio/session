@@ -52,7 +52,9 @@ A working middleware can be found here:
 
 example: **CLI executable**
 
-Another example implementation can be found in the [crypt.cli/sess.go] CLI app.
+Another example implementation can be found in the [crypt.cli/sess.go] CLI app.  
+Its generally useless with exception to observing and testing customization to User and
+Session heuristics, development or customization.
 
 This example can be compiled witout using GO111MODULES.  
 To compile the CLI app, run the following from the root directory.
@@ -60,6 +62,11 @@ To compile the CLI app, run the following from the root directory.
 ```bash
 go build ./crypt.cli
 ```
+
+The tool allows you to (1) `create` a user/password which includes generation of
+a session for the user, (2) `validate` the user/password and (3) `list` all
+sessions including the user owning the session.
+
 
 
 [crypt.cli/sess.go]:            crypt.cli/sess.go
