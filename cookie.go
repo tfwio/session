@@ -8,19 +8,30 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-var (
-	cookieSecure   = false
-	cookieHTTPOnly = true
-	cookieAgeSec   = ConstCookieAge48H
-	cookieAgeHrs   = 12
-)
-
 //
 const (
-	ConstCookieAge48H = /*60*60*/ 3600 * 48
-	ConstCookieAge24H = /*60*60*/ 3600 * 24
-	ConstCookieAge12H = /*60*60*/ 3600 * 12
+	ConstOneHourInSeconds      = 3600
+	ConstCookieAge12HInSeconds = 43200
+	ConstCookieAge24HInSeconds = 86400
+	ConstCookieAge48HInSeconds = 172800
 )
+
+var (
+	cookieSecure          = false
+	cookieHTTPOnly        = true
+	defaultCookieAgeHours = 12
+	defaultCookieAgeSec   = ConstCookieAge12HInSeconds
+)
+
+// CookieDefaults sets default cookie expire age and security.
+func CookieDefaults(cookieHours int, httpOnly bool, isSecure bool) {
+	if cookieHours != -1 {
+		defaultCookieAgeHours = cookieHours
+		defaultCookieAgeSec = defaultCookieAgeHours * ConstOneHourInSeconds
+	}
+	cookieHTTPOnly = httpOnly
+	cookieSecure = isSecure
+}
 
 // SetCookieMaxAge will set a cookie with our default settings.
 //
@@ -74,13 +85,6 @@ func SetCookieExpires(cli *gin.Context, name string, value string, expire time.T
 		Secure:   cookieSecure,
 		HttpOnly: cookieHTTPOnly,
 	})
-}
-
-// CookieDefaults sets default cookie expire age and security.
-func CookieDefaults(ageSec int, httpOnly bool, isSecure bool) {
-	cookieAgeSec = ageSec
-	cookieHTTPOnly = httpOnly
-	cookieSecure = isSecure
 }
 
 // getCookie does what it says.  if there is an error the returned value is `nil`.
