@@ -118,12 +118,29 @@ func main() {
 			println("- you must supply a password > len(4) chars long")
 		}
 	case "list":
-		session.CLIList()
+		List()
 	default:
 		println()
 		flag.PrintDefaults()
 	}
 
+}
+
+// List returns a  sessions for CLI.
+// The method first fetches a list of User elements
+// then reports the Sessions with user-data (name).
+func List() {
+	// list sessions
+	usermap := session.UserGetList()
+	sessions, count := session.ListSessions()
+	fmt.Printf("--> found %d entries\n", count)
+	for _, x := range sessions {
+		fmt.Printf("--> '%s'\n  CRD: %s\n  EXP: %s\n  SID: %s\n",
+			usermap[x.UserID].Name,
+			x.Created.Format("20060102_1504.005"),
+			x.Expires.Format("20060102_1504.005"),
+			x.SessID)
+	}
 }
 
 // AbsBase returns `filepath.Base(path)` after converting to absolute representation of path; Ignores errors.
