@@ -1,2 +1,5 @@
 vendor/
 data.db
+go.sum
+crypt.cli.exe
+sess.exe
