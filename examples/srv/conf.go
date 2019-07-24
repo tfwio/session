@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"regexp"
 	"strings"
 	"time"
 
@@ -11,6 +12,12 @@ import (
 )
 
 type (
+	// UnsafeURIHandler is used to see if an incoming URI is one that requires a valid session.
+	//
+	// param uri is the uri being checked.
+	//
+	// param unsafe is the node in our array of unsafe uri-strings.
+	UnsafeURIHandler func(uri, unsafe string) bool
 	// LogonModel responds to a login action such as "/login/" or (perhaps) "/login-refresh/"
 	LogonModel struct {
 		Action string      `json:"action"`
@@ -40,7 +47,8 @@ type (
 		AdvanceOnKeepYear  int
 		AdvanceOnKeepMonth int
 		AdvanceOnKeepDay   int
-		CheckHandlers      []string
+		UnsafeURI          []string
+		CheckURIHandler    UnsafeURIHandler
 	}
 )
 
@@ -59,6 +67,7 @@ const (
 	defaultAdvanceYear  = 0
 	defaultAdvanceMonth = 6
 	defaultAdvanceDay   = 0
+	baseMatchFmt        = "^%s"
 )
 
 var (
@@ -68,10 +77,11 @@ var (
 	// that are marked unsafe (to be checked for a valid sesison).
 	sessConfig = SessConfig{
 		KeyResponse:        KeyGinSessionValid,
-		CheckHandlers:      wrapup(strings.Split("index", ",")...),
 		AdvanceOnKeepYear:  defaultAdvanceYear,
 		AdvanceOnKeepMonth: defaultAdvanceMonth,
 		AdvanceOnKeepDay:   defaultAdvanceDay,
+		UnsafeURI:          wrapup(strings.Split("index,this,that", ",")...),
+		CheckURIHandler:    UnsafeURIHandlerRx,
 		FormSession:        FormSession{User: formUser, Pass: formPass, Keep: formKeep}}
 )
 
@@ -115,9 +125,16 @@ func OverrideSessionConfig(c SessConfig) {
 	sessConfig = c
 }
 
+// UnsafeURIHandlerRx uses a simple regular expression to validate
+// wether or not the URI is unsafe.
+func UnsafeURIHandlerRx(uri, unsafe string) bool {
+	regexp.MatchString(fmt.Sprintf(baseMatchFmt, unsafe), uri)
+	return strings.Contains(uri, unsafe)
+}
+
 func isunsafe(input string) (bool, string) {
-	for _, unsafe := range sessConfig.CheckHandlers {
-		if strings.Contains(input, unsafe) {
+	for _, unsafe := range sessConfig.UnsafeURI {
+		if sessConfig.CheckURIHandler(input, unsafe) {
 			return true, unsafe
 		}
 	}

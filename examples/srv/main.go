@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"net/http"
+	"regexp"
+	"strings"
 
 	_ "github.com/jinzhu/gorm/dialects/sqlite"
 	_ "github.com/mattn/go-sqlite3"
@@ -49,6 +51,23 @@ func main() {
 	engine := gin.Default()
 
 	configuration.initServerLogin(engine)
+	// this is identical to the default session config.
+	// you could just override the comma-delimited (no space)
+	// values in UnsafeURI (rather than calling this function) and all should
+	// run smoothly 😁
+	OverrideSessionConfig(SessConfig{
+		KeyResponse:        KeyGinSessionValid,  // gin-session-isValid
+		AdvanceOnKeepYear:  defaultAdvanceYear,  // 0
+		AdvanceOnKeepMonth: defaultAdvanceMonth, // 6
+		AdvanceOnKeepDay:   defaultAdvanceDay,   // 0
+		UnsafeURI:          wrapup(strings.Split("index,this,that", ",")...),
+		// CheckURIHandler:    UnsafeURIHandlerRx,
+		CheckURIHandler: func(uri, unsafe string) bool {
+			regexp.MatchString(fmt.Sprintf(baseMatchFmt, unsafe), uri)
+			return strings.Contains(uri, unsafe)
+		},
+		// these are expected form GET/POST params: "user", "pass" and "keep"
+		FormSession: FormSession{User: "user", Pass: "pass", Keep: "keep"}})
 
 	// index is in _unSafeHandlers, so you must be logged in to view it.
 	engine.GET("/index/", func(g *gin.Context) {
