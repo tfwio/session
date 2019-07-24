@@ -77,18 +77,14 @@ func (u *User) ByID(id int64) bool {
 //
 // FIXME: we should be checking if there is a existing record in sessions table
 // and re-using it for the user executing UPDATE as opposed to CREATE.
-func (u *User) CreateSession(r interface{}, host string, saltSize int) (bool, Session) {
+func (u *User) CreateSession(r interface{}, host string) (bool, Session) {
 
 	t := time.Now()
-	ss := defaultSaltSize
-	if saltSize != -1 {
-		ss = saltSize
-	}
 	result := false
 	sess := Session{
 		Host:    host,
 		UserID:  u.ID,
-		SessID:  toUBase64(NewSaltString(ss)),
+		SessID:  toUBase64(NewSaltString(defaultSaltSize)),
 		Created: t,
 		Expires: t.AddDate(0, defaultCookieAgeMonths, 0),
 	}

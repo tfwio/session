@@ -41,6 +41,7 @@ const (
 var (
 	fdb      = flag.String("db", defaulutDataset, "specify a database to use.")
 	fSaltLen = flag.Int("s", -1, "provide default salt length.  -1 will allow an internally definded default size")
+	fHashLen = flag.Int("h", -1, "provide default hash length.  -1 will allow an internally definded default size")
 	//
 	fList = flag.NewFlagSet("list", flag.ExitOnError)
 	//
@@ -83,7 +84,7 @@ func main() {
 		return
 	}
 
-	session.SetDefaults("sqlite3", *fdb, -1, -1)
+	session.SetDefaults("sqlite3", *fdb, *fSaltLen, *fHashLen)
 	session.EnsureTableUsers()
 	session.EnsureTableSessions()
 
@@ -97,9 +98,9 @@ func main() {
 			if *fcSess {
 				println("- Sesssion generation requested")
 			}
-			u.Create(*fcUser, *fcPass, *fSaltLen)
+			u.Create(*fcUser, *fcPass)
 			fmt.Printf("%v\n", u)
-			b, s := u.CreateSession(nil, "cli-example-app", -1)
+			b, s := u.CreateSession(nil, "cli-example-app")
 			fmt.Printf("success: %v; session=%v\n", b, s)
 		} else {
 			fmt.Printf("- username %s; pass %s\n", *fcUser, *fcPass)
