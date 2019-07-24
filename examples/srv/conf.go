@@ -107,7 +107,7 @@ func GetFormSession(r *http.Request) FormSession {
 }
 func (f *FormSession) hasUser() bool { return f.User != "" }
 func (f *FormSession) hasPass() bool { return f.Pass != "" }
-func (f *FormSession) hasKeep() bool { return f.Keep != "" }
+func (f *FormSession) hasKeep() bool { return f.Keep != "" && (f.Keep == "true" || f.Keep == "1") }
 
 // OverrideSessionConfig I'm not sure why I put this here.
 // We could just explicitly set it or a variable within.
