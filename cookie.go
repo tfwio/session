@@ -17,35 +17,30 @@ const (
 )
 
 var (
-	cookieSecure          = false
-	cookieHTTPOnly        = true
-	defaultCookieAgeHours = 12
-	defaultCookieAgeSec   = ConstCookieAge12HInSeconds
+	cookieSecure           = false
+	cookieHTTPOnly         = true
+	defaultCookieAgeMonths = 6
 )
 
 // CookieDefaults sets default cookie expire age and security.
-func CookieDefaults(cookieHours int, httpOnly bool, isSecure bool) {
-	if cookieHours != -1 {
-		defaultCookieAgeHours = cookieHours
-		defaultCookieAgeSec = defaultCookieAgeHours * ConstOneHourInSeconds
+func CookieDefaults(cookieMonths int, httpOnly, isSecure bool) {
+	if cookieMonths != -1 {
+		defaultCookieAgeMonths = cookieMonths
 	}
 	cookieHTTPOnly = httpOnly
 	cookieSecure = isSecure
 }
 
-// SetCookieMaxAge will set a cookie with our default settings.
-//
-// Will use `maxAge` in seconds to tell the browser
-// to destroy the cookie as oppsed to using `SetCookieExpires`.
-// See `CookieDefaults` in order to override default settings.
+// SetCookieDestroy will destroy a client session by destroying the cookie.
+// We are setting the http.Cookie.MaxAge to -1.
 //
 // Note: *Like `github.com/gogonic/gin`, we are applying `url.QueryEscape`
 // `value` stored to the cookie so be sure to UnEscape the value when retrieved.*
-func SetCookieMaxAge(cli *gin.Context, name string, value string, maxAge int) {
+func SetCookieDestroy(cli *gin.Context, name, value string) {
 	http.SetCookie(cli.Writer, &http.Cookie{
 		Name:     name,
 		Value:    url.QueryEscape(value),
-		MaxAge:   maxAge,
+		MaxAge:   -1,
 		Path:     "/",
 		Secure:   cookieSecure,
 		HttpOnly: cookieHTTPOnly,
@@ -59,7 +54,7 @@ func SetCookieMaxAge(cli *gin.Context, name string, value string, maxAge int) {
 //
 // Note: *Like `github.com/gogonic/gin`, we are applying `url.QueryEscape`
 // `value` stored to the cookie so be sure to UnEscape the value when retrieved.*
-func SetCookieSessOnly(cli *gin.Context, name string, value string) {
+func SetCookieSessOnly(cli *gin.Context, name, value string) {
 	http.SetCookie(cli.Writer, &http.Cookie{
 		Name:     name,
 		Value:    url.QueryEscape(value),
@@ -71,12 +66,11 @@ func SetCookieSessOnly(cli *gin.Context, name string, value string) {
 
 // SetCookieExpires will set a cookie with our default settings.
 //
-// Will use Expires (as opposed to `SetCookieMaxAge`).
 // See `CookieDefaults` in order to override default settings.
 //
 // Note: *Like `github.com/gogonic/gin`, we are applying `url.QueryEscape`
 // `value` stored to the cookie so be sure to UnEscape the value when retrieved.*
-func SetCookieExpires(cli *gin.Context, name string, value string, expire time.Time) {
+func SetCookieExpires(cli *gin.Context, name, value string, expire time.Time) {
 	http.SetCookie(cli.Writer, &http.Cookie{
 		Name:     name,
 		Value:    url.QueryEscape(value),
