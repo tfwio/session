@@ -3,8 +3,6 @@ package main
 import (
 	"fmt"
 	"net/http"
-	"regexp"
-	"strings"
 
 	_ "github.com/jinzhu/gorm/dialects/sqlite"
 	_ "github.com/mattn/go-sqlite3"
@@ -14,25 +12,18 @@ import (
 )
 
 var (
-	sessSvc = session.Service{
+	service = session.Service{
 		AppID:              "sessions_demo",
-		Port:               ":5500",
-		DataSystem:         "sqlite3",
-		DataSource:         "./ormus.db3",
-		CookieHTTPOnly:     true,                       // hymmm
-		CookieSecure:       false,                      // we want to see em in the browser
-		KeyResponse:        session.KeyGinSessionValid, // gin-session-isValid
-		AdvanceOnKeepYear:  0,                          // 0
-		AdvanceOnKeepMonth: 6,                          // 6
-		AdvanceOnKeepDay:   0,                          // 0
+		Port:               ":5500",    // Port is used for
+		CookieHTTPOnly:     true,       // hymmm
+		CookieSecure:       false,      // we want to see em in the browser
+		KeyResponse:        "is-valid", // default: session.isValid
+		AdvanceOnKeepYear:  0,          // 0
+		AdvanceOnKeepMonth: 6,          // 6
+		AdvanceOnKeepDay:   0,          // 0
 		UnsafeURI:          []string{"/index/", "/this/", "/that"},
-		// CheckURIHandler:    UnsafeURIHandlerRx,
-		CheckURIHandler: func(uri, unsafe string) bool {
-			regexp.MatchString(fmt.Sprintf("^%s", unsafe), uri)
-			return strings.Contains(uri, unsafe)
-		},
-		// expected form GET/POST params: "user", "pass" and "keep"
-		FormSession: session.FormSession{User: "user", Pass: "pass", Keep: "keep"},
+		CheckURIHandler:    nil,
+		FormSession:        session.FormSession{User: "user", Pass: "pass", Keep: "keep"},
 	}
 )
 
@@ -56,13 +47,15 @@ func main() {
 	gin.SetMode(gin.ReleaseMode)
 	engine := gin.Default()
 
-	session.SetupService(sessSvc, engine)
+	session.SetupService(service, engine, "sqlite3", "./ormus.db", -1, -1)
+	// at this point you can override the crypto settings
+	// session.OverrideCrypto(...)
 
 	// index is in _unSafeHandlers, so you must be logged in to view it.
 	engine.GET("/index/", func(g *gin.Context) {
 		g.String(http.StatusOK, "Hello")
 	})
-	fauxHost := fmt.Sprintf("127.0.0.1%s", sessSvc.Port)
+	fauxHost := fmt.Sprintf("127.0.0.1%s", service.Port)
 	fmt.Printf("using host: \"%s\"\n", fauxHost)
 	engine.Run(fauxHost)
 }

@@ -38,8 +38,6 @@ type (
 		Port               string
 		CookieSecure       bool
 		CookieHTTPOnly     bool
-		DataSystem         string
-		DataSource         string
 		KeyResponse        string
 		AdvanceOnKeepYear  int
 		AdvanceOnKeepMonth int
@@ -50,38 +48,40 @@ type (
 )
 
 const (
-	// KeyGinSessionValid is used in middleware to provide
+	// defaultKeySessionIsValid is used in middleware to provide
 	// a boolean value indicating wether or not session has
 	// been checked and is valid.
-	KeyGinSessionValid  = "gin-session-isValid"
-	actionLogin         = "login"
-	actionLogout        = "logout"
-	actionRegister      = "register"
-	actionStatus        = "status"
-	formUser            = "user"
-	formPass            = "pass"
-	formKeep            = "keep"
-	defaultAdvanceYear  = 0
-	defaultAdvanceMonth = 6
-	defaultAdvanceDay   = 0
-	baseMatchFmt        = "^%s"
+	defaultKeySessionIsValid = "session.isValid"
+	actionLogin              = "login"
+	actionLogout             = "logout"
+	actionRegister           = "register"
+	actionStatus             = "status"
+	formUser                 = "user"
+	formPass                 = "pass"
+	formKeep                 = "keep"
+	defaultAdvanceYear       = 0
+	defaultAdvanceMonth      = 6
+	defaultAdvanceDay        = 0
+	baseMatchFmt             = "^%s"
 )
 
 var (
 	service = Service{
 		AppID:              "sessions_demo",
 		Port:               ":5500",
-		DataSource:         "./ormus.db3",
-		DataSystem:         "sqlite3",
 		CookieSecure:       false,
 		CookieHTTPOnly:     true,
 		AdvanceOnKeepYear:  defaultAdvanceYear,  // 0
 		AdvanceOnKeepMonth: defaultAdvanceMonth, // 6
 		AdvanceOnKeepDay:   defaultAdvanceDay,   // 0
-		KeyResponse:        KeyGinSessionValid,
+		KeyResponse:        defaultKeySessionIsValid,
 		UnsafeURI:          WrapURIPathString("index,this,that"),
-		CheckURIHandler:    unsafeURIHandlerRx,
-		FormSession:        FormSession{User: formUser, Pass: formPass, Keep: formKeep},
+		// this is identical to default uri-handler (set CheckURIHandler to nil for default)
+		CheckURIHandler: func(uri, unsafe string) bool {
+			regexp.MatchString(fmt.Sprintf(baseMatchFmt, unsafe), uri)
+			return strings.Contains(uri, unsafe)
+		},
+		FormSession: FormSession{User: formUser, Pass: formPass, Keep: formKeep},
 	}
 	// SessionConfiguration is our live configuration.
 	// It stores default form element names and a key that
@@ -96,10 +96,14 @@ func (s *Service) AddDate(value interface{}) time.Time {
 	var result time.Time
 	switch t := value.(type) {
 	case *time.Time:
+		result = t.AddDate(s.AdvanceOnKeepYear, s.AdvanceOnKeepMonth, s.AdvanceOnKeepDay)
+		break
 	case time.Time:
 		result = t.AddDate(s.AdvanceOnKeepYear, s.AdvanceOnKeepMonth, s.AdvanceOnKeepDay)
 		break
 	case *Session:
+		result = t.Created.AddDate(s.AdvanceOnKeepYear, s.AdvanceOnKeepMonth, s.AdvanceOnKeepDay)
+		break
 	case Session:
 		result = t.Created.AddDate(s.AdvanceOnKeepYear, s.AdvanceOnKeepMonth, s.AdvanceOnKeepDay)
 		break
@@ -124,12 +128,17 @@ func (f *FormSession) hasPass() bool { return f.Pass != "" }
 func (f *FormSession) hasKeep() bool { return f.Keep != "" && (f.Keep == "true" || f.Keep == "1") }
 
 // SetupService sets up session service.
-func SetupService(value Service, engine *gin.Engine) {
+//
+// Set saltSize or hashSize to -1 to persist internal defaults.
+func SetupService(value Service, engine *gin.Engine, dbsys, dbsrc string, saltSize, hashSize int) {
 	service = value
-	service.attachRoutesAndMiddleware(engine)
-	if service.CheckURIHandler == nil {
-		service.CheckURIHandler = unsafeURIHandlerRx
+	if engine != nil {
+		service.attachRoutesAndMiddleware(engine)
+		if service.CheckURIHandler == nil {
+			service.CheckURIHandler = unsafeURIHandlerRx
+		}
 	}
+	SetDefaults(dbsys, dbsrc, saltSize, hashSize)
 }
 
 // UnsafeURIHandlerRx uses a simple regular expression to validate

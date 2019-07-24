@@ -14,13 +14,13 @@ var (
 	defaultHashThread = int32(runtime.NumCPU())
 )
 
-// Override allows you to override default hash creation settings.
+// OverrideCrypto allows you to override default hash creation settings.
 // Set a value to -1 to persist default(s).
 //
 // *note*: that defaults are `uint32` with exception to the int32
 // hashThreadCount is stored to.  By default defaultHashThreadCount
 // is set using runtime.NumCUP() internally.
-func Override(hashMemSize, hashTime, hashKeyLength, hashThreadCount int64) {
+func OverrideCrypto(hashMemSize, hashTime, hashKeyLength, hashThreadCount int64) {
 	if hashMemSize != -1 {
 		defaultHashMem = uint32(hashMemSize)
 	}

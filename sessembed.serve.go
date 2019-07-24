@@ -3,6 +3,7 @@ package session
 import (
 	"fmt"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
@@ -44,6 +45,8 @@ func (s *Service) sessMiddleware(g *gin.Context) {
 	g.Next() // (calling this probably isn't necessary)
 }
 
+const tfmt = "2016-01-02 03:04 PM"
+
 // serveUserStatus serves JSON checking if a session exists,
 // persists, and a user exists.
 // `{status: true,  detail: "found", data: <username>}` if all checks out,
@@ -61,6 +64,7 @@ func (s *Service) sessMiddleware(g *gin.Context) {
 func (s *Service) serveUserStatus(g *gin.Context) {
 	sh := s.SessHost()
 	if sess, success := QueryCookie(sh, g); success {
+		fmt.Fprintf(os.Stderr, "HOST: %s, CRD: %s, EXP: %s\n", sh, sess.Created.Format(tfmt), sess.Expires.Format(tfmt))
 		if u, success := sess.GetUser(); success && sess.IsValid() {
 			if sess.KeepAlive {
 				sess.Refresh(true)
