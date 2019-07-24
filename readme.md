@@ -60,7 +60,7 @@ the moment and will be consolidated into the project a bit more seemlessly in th
 future.
 
 ```bash
-go build ./examples/srv
+go build -tags sessembed ./examples/srv2
 ```
 
 The example uses `127.0.0.1:5500` as the default host/port and serves the following URIs
