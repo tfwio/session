@@ -1,5 +1,3 @@
-// +build sessembed
-
 package session
 
 import (
@@ -9,6 +7,8 @@ import (
 	"regexp"
 	"strings"
 	"time"
+
+	"github.com/gin-gonic/gin"
 )
 
 type (
@@ -31,25 +31,21 @@ type (
 		Pass string
 		Keep string
 	}
-	// ServiceConf provides some configuration elements.
-	// Its used to store key names for form values here.
-	ServiceConf struct {
+	// Service is not required with exception to this little demo ;)
+	Service struct {
 		FormSession
+		AppID              string
+		Port               string
+		CookieSecure       bool
+		CookieHTTPOnly     bool
+		DataSystem         string
+		DataSource         string
 		KeyResponse        string
 		AdvanceOnKeepYear  int
 		AdvanceOnKeepMonth int
 		AdvanceOnKeepDay   int
 		UnsafeURI          []string
 		CheckURIHandler    UnsafeURIHandler
-	}
-	// Service is not required with exception to this little demo ;)
-	Service struct {
-		Conf       ServiceConf
-		AppID      string
-		Host       string
-		Port       string
-		DataSystem string
-		DataSource string
 	}
 )
 
@@ -73,14 +69,19 @@ const (
 
 var (
 	service = Service{
-		Conf: ServiceConf{
-			KeyResponse:        KeyGinSessionValid,
-			AdvanceOnKeepYear:  defaultAdvanceYear,
-			AdvanceOnKeepMonth: defaultAdvanceMonth,
-			AdvanceOnKeepDay:   defaultAdvanceDay,
-			UnsafeURI:          wrapup(strings.Split("index,this,that", ",")...),
-			CheckURIHandler:    unsafeURIHandlerRx,
-			FormSession:        FormSession{User: formUser, Pass: formPass, Keep: formKeep}},
+		AppID:              "sessions_demo",
+		Port:               ":5500",
+		DataSource:         "./ormus.db3",
+		DataSystem:         "sqlite3",
+		CookieSecure:       false,
+		CookieHTTPOnly:     true,
+		AdvanceOnKeepYear:  defaultAdvanceYear,  // 0
+		AdvanceOnKeepMonth: defaultAdvanceMonth, // 6
+		AdvanceOnKeepDay:   defaultAdvanceDay,   // 0
+		KeyResponse:        KeyGinSessionValid,
+		UnsafeURI:          WrapURIPathString("index,this,that"),
+		CheckURIHandler:    unsafeURIHandlerRx,
+		FormSession:        FormSession{User: formUser, Pass: formPass, Keep: formKeep},
 	}
 	// SessionConfiguration is our live configuration.
 	// It stores default form element names and a key that
@@ -91,7 +92,7 @@ var (
 // AddDate uses ServiceConf defaults to push an expiration date forward.
 // The `value` interface can of type `time.Time` or `session.Session`.
 // If the supplied value is not valid, we'll return a given `time.Now()`.
-func (s *ServiceConf) AddDate(value interface{}) time.Time {
+func (s *Service) AddDate(value interface{}) time.Time {
 	var result time.Time
 	switch t := value.(type) {
 	case *time.Time:
@@ -113,42 +114,22 @@ func (s *ServiceConf) AddDate(value interface{}) time.Time {
 // GetFormSession gets form values from http.Request
 func GetFormSession(r *http.Request) FormSession {
 	return FormSession{
-		User: r.FormValue(service.Conf.User),
-		Pass: r.FormValue(service.Conf.Pass),
-		Keep: r.FormValue(service.Conf.Keep),
+		User: r.FormValue(service.User),
+		Pass: r.FormValue(service.Pass),
+		Keep: r.FormValue(service.Keep),
 	}
 }
 func (f *FormSession) hasUser() bool { return f.User != "" }
 func (f *FormSession) hasPass() bool { return f.Pass != "" }
 func (f *FormSession) hasKeep() bool { return f.Keep != "" && (f.Keep == "true" || f.Keep == "1") }
 
-// OverrideSessionConfig I'm not sure why I put this here.
-// We could just explicitly set it or a variable within.
-func (s *Service) OverrideSessionConfig(c ServiceConf) {
-	s.Conf = c
-}
-
-// OverrideSessionConfig2 lets us explicitly override all
-// Session Service values.
-func (s *Service) OverrideSessionConfig2(
-	advY, advM, advD int,
-	frmUser, frmPass, frmKeep string,
-	rKey string,
-	uriHandler UnsafeURIHandler,
-	unsafeURI ...string) {
-	if advY != -1 {
-		s.Conf.AdvanceOnKeepYear = advY
+// SetupService sets up session service.
+func SetupService(value Service, engine *gin.Engine) {
+	service = value
+	service.attachRoutesAndMiddleware(engine)
+	if service.CheckURIHandler == nil {
+		service.CheckURIHandler = unsafeURIHandlerRx
 	}
-	if advM != -1 {
-		s.Conf.AdvanceOnKeepMonth = advM
-	}
-	if advD != -1 {
-		s.Conf.AdvanceOnKeepDay = advD
-	}
-	s.Conf.KeyResponse = rKey
-	s.Conf.UnsafeURI = unsafeURI
-	s.Conf.CheckURIHandler = uriHandler
-	s.Conf.FormSession = FormSession{User: "user", Pass: "pass", Keep: "keep"}
 }
 
 // UnsafeURIHandlerRx uses a simple regular expression to validate
@@ -159,19 +140,10 @@ func unsafeURIHandlerRx(uri, unsafe string) bool {
 }
 
 func (s *Service) isunsafe(input string) (bool, string) {
-	for _, unsafe := range service.Conf.UnsafeURI {
-		if s.Conf.CheckURIHandler(input, unsafe) {
+	for _, unsafe := range service.UnsafeURI {
+		if s.CheckURIHandler(input, unsafe) {
 			return true, unsafe
 		}
 	}
 	return false, ""
-}
-
-func wrapup(inputs ...string) []string {
-	data := inputs
-	for i, handler := range data {
-		data[i] = strings.TrimRight(WReapLeft("/", handler), "/")
-		// println(data[i])
-	}
-	return data
 }

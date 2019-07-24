@@ -43,7 +43,7 @@ func (s *Session) IsValid() bool {
 // if save is true, the record is updated in [database].[sessions] table.
 func (s *Session) Refresh(save bool) {
 	s.Created = time.Now()
-	s.Expires = s.Created.AddDate(0, defaultCookieAgeMonths, 0)
+	s.Expires = service.AddDate(s)
 	s.SessID = toUBase64(NewSaltString(defaultSaltSize))
 	if save {
 		s.Save()

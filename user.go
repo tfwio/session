@@ -87,7 +87,7 @@ func (u *User) CreateSession(r interface{}, host string, keepAlive bool) (bool, 
 		KeepAlive: keepAlive,
 		SessID:    toUBase64(NewSaltString(defaultSaltSize)),
 		Created:   t,
-		Expires:   t.AddDate(0, defaultCookieAgeMonths, 0),
+		Expires:   service.AddDate(t),
 	}
 
 	sess.Client = getClientString(r)

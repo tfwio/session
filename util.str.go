@@ -49,3 +49,25 @@ func Cat(pInputString ...string) string {
 	}
 	return buffer.String() // fmt.Println(buffer.String())
 }
+
+// WrapURIPathArray wraps up a list of strings such as `[]string{"a", "b", "c"}`
+// into a URI path such as `[]string{"/a/", "/b/", "/c/"}`
+func WrapURIPathArray(inputs ...string) []string {
+	data := inputs
+	for i, handler := range data {
+		str := strings.Trim(" ", handler)
+		if str == "/" {
+			data[i] = str
+		} else {
+			data[i] = strings.TrimRight(WReapLeft("/", str), "/")
+		}
+	}
+	return data
+}
+
+// WrapURIPathString wraps a comma-delimited string to URI paths.
+//
+// See: WrapURIPathArray
+func WrapURIPathString(input string) []string {
+	return WrapURIPathArray(strings.Split("index,this,that", ",")...)
+}

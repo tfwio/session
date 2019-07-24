@@ -14,12 +14,25 @@ import (
 )
 
 var (
-	configuration = Configuration{
-		appID:      "sessions_demo",
-		Host:       "127.0.0.1",
-		Port:       ":5500",
-		DataSource: "./ormus.db3",
-		DataSystem: "sqlite3",
+	sessSvc = session.Service{
+		AppID:              "sessions_demo",
+		Port:               ":5500",
+		DataSystem:         "sqlite3",
+		DataSource:         "./ormus.db3",
+		CookieHTTPOnly:     true,                       // hymmm
+		CookieSecure:       false,                      // we want to see em in the browser
+		KeyResponse:        session.KeyGinSessionValid, // gin-session-isValid
+		AdvanceOnKeepYear:  0,                          // 0
+		AdvanceOnKeepMonth: 6,                          // 6
+		AdvanceOnKeepDay:   0,                          // 0
+		UnsafeURI:          []string{"/index/", "/this/", "/that"},
+		// CheckURIHandler:    UnsafeURIHandlerRx,
+		CheckURIHandler: func(uri, unsafe string) bool {
+			regexp.MatchString(fmt.Sprintf("^%s", unsafe), uri)
+			return strings.Contains(uri, unsafe)
+		},
+		// expected form GET/POST params: "user", "pass" and "keep"
+		FormSession: session.FormSession{User: "user", Pass: "pass", Keep: "keep"},
 	}
 )
 
@@ -37,43 +50,19 @@ var (
 
 func main() {
 
-	session.CookieDefaults(
-		12,    // 12h expiration [db].[sessions] table, not so much cookies.
-		true,  // httpOnly
-		false, // if true, cookies will not be visible to the client/user for example, in chrome.
-	)
-
 	// optional; ensure absolute (working) data source path for sqlite3
 	// configuration.DataSource, _ = filepath.Abs(configuration.DataSource)
-	session.SetDefaults(configuration.DataSystem, configuration.DataSource, -1, -1)
 
 	gin.SetMode(gin.ReleaseMode)
 	engine := gin.Default()
 
-	configuration.initServerLogin(engine)
-	// this is identical to the default session config.
-	// you could just override the comma-delimited (no space)
-	// values in UnsafeURI (rather than calling this function) and all should
-	// run smoothly 😁
-	OverrideSessionConfig(ServiceConf{
-		KeyResponse:        KeyGinSessionValid,  // gin-session-isValid
-		AdvanceOnKeepYear:  defaultAdvanceYear,  // 0
-		AdvanceOnKeepMonth: defaultAdvanceMonth, // 6
-		AdvanceOnKeepDay:   defaultAdvanceDay,   // 0
-		UnsafeURI:          wrapup(strings.Split("index,this,that", ",")...),
-		// CheckURIHandler:    UnsafeURIHandlerRx,
-		CheckURIHandler: func(uri, unsafe string) bool {
-			regexp.MatchString(fmt.Sprintf(baseMatchFmt, unsafe), uri)
-			return strings.Contains(uri, unsafe)
-		},
-		// these are expected form GET/POST params: "user", "pass" and "keep"
-		FormSession: FormSession{User: "user", Pass: "pass", Keep: "keep"}})
+	session.SetupService(sessSvc, engine)
 
 	// index is in _unSafeHandlers, so you must be logged in to view it.
 	engine.GET("/index/", func(g *gin.Context) {
 		g.String(http.StatusOK, "Hello")
 	})
-
-	fmt.Printf("using host: \"%s%s\"\n", configuration.Host, configuration.Port)
-	engine.Run(fmt.Sprintf("%s%s", configuration.Host, configuration.Port))
+	fauxHost := fmt.Sprintf("127.0.0.1%s", sessSvc.Port)
+	fmt.Printf("using host: \"%s\"\n", fauxHost)
+	engine.Run(fauxHost)
 }

@@ -8,27 +8,13 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-//
-const (
-	ConstOneHourInSeconds      = 3600
-	ConstCookieAge12HInSeconds = 43200
-	ConstCookieAge24HInSeconds = 86400
-	ConstCookieAge48HInSeconds = 172800
-)
-
-var (
-	cookieSecure           = false
-	cookieHTTPOnly         = true
-	defaultCookieAgeMonths = 6
-)
-
 // CookieDefaults sets default cookie expire age and security.
-func CookieDefaults(cookieMonths int, httpOnly, isSecure bool) {
+func (s *Service) CookieDefaults(cookieMonths int, httpOnly, isSecure bool) {
 	if cookieMonths != -1 {
-		defaultCookieAgeMonths = cookieMonths
+		s.AdvanceOnKeepMonth = cookieMonths
 	}
-	cookieHTTPOnly = httpOnly
-	cookieSecure = isSecure
+	s.CookieHTTPOnly = httpOnly
+	s.CookieSecure = isSecure
 }
 
 // SetCookieDestroy will destroy a client session by destroying the cookie.
@@ -42,8 +28,8 @@ func SetCookieDestroy(cli *gin.Context, name, value string) {
 		Value:    url.QueryEscape(value),
 		MaxAge:   -1,
 		Path:     "/",
-		Secure:   cookieSecure,
-		HttpOnly: cookieHTTPOnly,
+		Secure:   service.CookieSecure,
+		HttpOnly: service.CookieHTTPOnly,
 	})
 }
 
@@ -59,8 +45,8 @@ func SetCookieSessOnly(cli *gin.Context, name, value string) {
 		Name:     name,
 		Value:    url.QueryEscape(value),
 		Path:     "/",
-		Secure:   cookieSecure,
-		HttpOnly: cookieHTTPOnly,
+		Secure:   service.CookieSecure,
+		HttpOnly: service.CookieHTTPOnly,
 	})
 }
 
@@ -76,8 +62,8 @@ func SetCookieExpires(cli *gin.Context, name, value string, expire time.Time) {
 		Value:    url.QueryEscape(value),
 		Expires:  expire,
 		Path:     "/",
-		Secure:   cookieSecure,
-		HttpOnly: cookieHTTPOnly,
+		Secure:   service.CookieSecure,
+		HttpOnly: service.CookieHTTPOnly,
 	})
 }
 

@@ -1,5 +1,3 @@
-// +build sessembed
-
 package session
 
 import (
@@ -19,9 +17,9 @@ func (s *Service) SessHost() string {
 	return fmt.Sprintf("%s%s", s.AppID, strings.TrimLeft(s.Port, ":"))
 }
 
-// AttachRoutesAndMiddleware is called to connect gin.Engine to middleware and
+// attachRoutesAndMiddleware is called to connect gin.Engine to middleware and
 // /logout/, /login/, /register/ and /stat/ URI.
-func (s *Service) AttachRoutesAndMiddleware(engine *gin.Engine) {
+func (s *Service) attachRoutesAndMiddleware(engine *gin.Engine) {
 	// fmt.Println("--> LOGON SESSIONS SUPPORTED")
 	engine.Use(s.sessMiddleware)
 	engine.Any("/logout/", s.serveLogout)
@@ -42,7 +40,7 @@ func (s *Service) sessMiddleware(g *gin.Context) {
 	}
 	// a flag to check on the status in our actual handler.
 	// use `g.Get(<Key>)` from responseHandler
-	g.Set(s.Conf.KeyResponse, yn)
+	g.Set(s.KeyResponse, yn)
 	g.Next() // (calling this probably isn't necessary)
 }
 
