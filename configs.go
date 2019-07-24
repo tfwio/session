@@ -24,7 +24,7 @@ func SetDataLogging(value bool) {
 
 // SetDefaults allows a external library to set the local datasource.
 // Set saltSize or heshKeyLen to -1 to persist default(s).
-func SetDefaults(source string, sys string, saltSize int, hashKeyLen int) {
+func SetDefaults(sys, source string, saltSize, hashKeyLen int) {
 	datasource = source
 	datasys = sys
 	if saltSize != -1 {

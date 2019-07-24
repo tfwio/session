@@ -41,7 +41,7 @@ func main() {
 
 	// optional; ensure absolute (working) data source path for sqlite3
 	// configuration.DataSource, _ = filepath.Abs(configuration.DataSource)
-	session.SetDefaults(configuration.DataSource, configuration.DataSystem, -1, -1)
+	session.SetDefaults(configuration.DataSystem, configuration.DataSource, -1, -1)
 
 	gin.SetMode(gin.ReleaseMode)
 	engine := gin.Default()

@@ -83,7 +83,7 @@ func main() {
 		return
 	}
 
-	session.SetDefaults(*fdb, "sqlite3", -1, -1)
+	session.SetDefaults("sqlite3", *fdb, -1, -1)
 	session.EnsureTableUsers()
 	session.EnsureTableSessions()
 
