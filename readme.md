@@ -11,9 +11,9 @@ so easily conforms to other data-systems.
 - User salt and hash table generation
 - Validate User password
 - Client (browser) session create, destroy and validate
-- Easily customize data source, system and salt-size in
-  [configs.go::SetDefaults(…)][setdefaults] or just
-  [crypt.go::Override(…)][crypt-override] hash memory, time and key-length.
+- Easily customize all settings by way of Service settings
+  [session.Service settings][service-config] and if needed, 
+  [OverrideCrypto(…)][crypt-override] salt and hash size, hash memory, time and hash-key length.
 - Client (browser) sessions have two expiration options: when browser session ends (browser is closed) and "keep alive" (as shown in the example gin web-app).
 - The crypto incorporated is powerful and presently (201907) concurrent
   with todays standards.
@@ -44,23 +44,12 @@ If implemented as middleware, session functionality can easily snap-in to any
 compile with the bash helper
 
 ```bash
-./do gin
-```
-
-or just bash
-
-```bash
+./do srv
+# or standard way
 go build ./examples/srv
-```
 
-The `./examples/srv2` example is the same as the `./examples/srv` with
-exception to the fact that we're using a build tag such as `-tags sessembed`
-to compile it embedded in the sessions library.  This mode is a bit clunky at
-the moment and will be consolidated into the project a bit more seemlessly in the
-future.
-
-```bash
-go build -tags sessembed ./examples/srv2
+# and run it
+./srv
 ```
 
 The example uses `127.0.0.1:5500` as the default host/port and serves the following URIs
@@ -156,8 +145,8 @@ Finally, we can call the following to show each user-session stored in the sessi
 ```
 
 [crypt.cli/sess.go]:            crypt.cli/sess.go
-[setdefaults]:                  https://github.com/tfwio/session/blob/7c101cae41533a59124cac9b1664e5deb354b429/configs.go#L30
-[crypt-override]:               https://github.com/tfwio/session/blob/7c101cae41533a59124cac9b1664e5deb354b429/crypt.go#L23
+[service-config]:               https://github.com/tfwio/session/blob/2c2adb376cde8c0b31d269f8686df51d0f64eb62/examples/srv/main.go#L14
+[crypt-override]:               https://github.com/tfwio/session/blob/7c101cae41533a59124cac9b1664e5deb354b429/crypt.go#L23 "crypt.go OverrideCrypto(…)"
 [ClientIP]:                     https://github.com/gin-gonic/gin/blob/f98b339b773105aad77f321d0baaa30475bf875d/context.go#L690
 [GORM]:                         https://github.com/jinzhu/gorm
 [github.com/gin-gonic/gin]:     https://github.com/gin-gonic/gin
