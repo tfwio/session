@@ -122,7 +122,7 @@ func (c *Configuration) serveLogin(g *gin.Context) {
 				if u.ValidatePassword(form.Pass) {
 					// fmt.Println("  ==> PW:GOOD")
 					sess.Refresh(false)
-					if form.hasKeep() && form.Keep == "true" {
+					if form.hasKeep() {
 						sess.KeepAlive = true
 						session.SetCookieExpires(g, sh, sess.SessID, sess.Expires)
 					} else {
@@ -158,24 +158,32 @@ func (c *Configuration) serveLogin(g *gin.Context) {
 func (c *Configuration) serveRegister(g *gin.Context) {
 
 	j := LogonModel{Action: actionRegister, Detail: "user creation failed.", Status: false}
-	usr := g.Request.FormValue(formUser)
-	pas := g.Request.FormValue(formPass)
+
+	form := GetFormSession(g.Request)
 
 	u := session.User{}
-	// fmt.Printf("!-> %s, <password>, %v\n", usr, -1)
-	if e := u.Create(usr, pas, -1); e != 0 {
+	if e := u.Create(form.User, form.Pass); e != 0 {
 		switch e {
 		case -1:
 			j.Detail = "Failed to load db."
+			break
 		case 1:
 			j.Detail = "User record already exists."
+			break
+		case 2:
+			j.Detail = "Chek Name and Pass length; should be >= 5 chars."
+			break
 		}
 	} else {
+
 		sh := c.SessHost()
-		// create a session for the user
-		e, sess := u.CreateSession(g, sh, -1)
+		e, sess := u.CreateSession(g, sh, form.hasKeep())
 		if !e {
-			session.SetCookieExpires(g, sh, sess.SessID, sess.Expires)
+			if form.hasKeep() {
+				session.SetCookieExpires(g, sh, sess.SessID, sess.Expires)
+			} else {
+				session.SetCookieSessOnly(g, sh, sess.SessID)
+			}
 			session.SetCookieSessOnly(g, sh+"_xo", u.Name)
 			j.Status = true
 			j.Detail = "User and Session created."

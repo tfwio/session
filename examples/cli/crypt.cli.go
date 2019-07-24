@@ -100,7 +100,7 @@ func main() {
 			}
 			u.Create(*fcUser, *fcPass)
 			fmt.Printf("%v\n", u)
-			b, s := u.CreateSession(nil, "cli-example-app")
+			b, s := u.CreateSession(nil, "cli-example-app", false)
 			fmt.Printf("success: %v; session=%v\n", b, s)
 		} else {
 			fmt.Printf("- username %s; pass %s\n", *fcUser, *fcPass)

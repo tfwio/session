@@ -26,7 +26,9 @@ var (
 // get or post variables such as
 //
 // http://localhost:5500/login/?user=admin&pass=password
+// http://localhost:5500/login/?user=admin&pass=password&keep=true
 // http://localhost:5500/register/?user=admin&pass=password
+// http://localhost:5500/register/?user=admin&pass=password&keep=true
 // http://localhost:5500/stat/
 // http://localhost:5500/logout/
 //
