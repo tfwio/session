@@ -66,14 +66,6 @@ func (u *User) ByID(id int64) bool {
 	return u.ID == id
 }
 
-// CreateSession32 creates session with a default salt size of 32 bytes.
-//
-// the `r interface{}` is expected to be a `*gin.Context` so that
-// we can provide the sessions table a client IP for the `[cli-key]` column.
-func (u *User) CreateSession32(r interface{}, host string) (bool, Session) {
-	return u.CreateSession(r, host, 32)
-}
-
 // CreateSession Save a session into the sessions table.
 //
 // The method is written to utilize gin-gonic/gin `*gin.Context` as
@@ -88,7 +80,7 @@ func (u *User) CreateSession32(r interface{}, host string) (bool, Session) {
 func (u *User) CreateSession(r interface{}, host string, saltSize int) (bool, Session) {
 
 	t := time.Now()
-	ss := saltsize
+	ss := defaultSaltSize
 	if saltSize != -1 {
 		ss = saltSize
 	}
@@ -125,7 +117,7 @@ func (u *User) CreateSession(r interface{}, host string, saltSize int) (bool, Se
 // (0) on success
 func (u *User) Create(name string, pass string, saltSize int) int {
 
-	mysalt := saltsize
+	mysalt := defaultSaltSize
 	if saltSize != -1 {
 		mysalt = saltSize
 	}

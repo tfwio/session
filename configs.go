@@ -11,7 +11,7 @@ import (
 var (
 	datasource              string
 	datasys                 string
-	saltsize                = 48
+	defaultSaltSize         = 48
 	defaultSessionLength, _ = time.ParseDuration("12h")
 	unknownclient           = "unknown-client"
 	dataLogging             = false
@@ -24,11 +24,14 @@ func SetDataLogging(value bool) {
 
 // SetDefaults allows a external library to set the local datasource.
 // Set saltSize or heshKeyLen to -1 to persist default(s).
+//
+// Note that the internally defined salt size is 48 while its
+// commonly (in the wild) something <= 32 bytes.
 func SetDefaults(sys, source string, saltSize, hashKeyLen int) {
 	datasource = source
 	datasys = sys
 	if saltSize != -1 {
-		saltsize = saltSize
+		defaultSaltSize = saltSize
 	}
 	if hashKeyLen != -1 {
 		defaultHashKeyLen = uint32(hashKeyLen)

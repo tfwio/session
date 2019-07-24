@@ -44,7 +44,7 @@ func (s *Session) IsValid() bool {
 func (s *Session) Refresh(save bool) {
 	s.Created = time.Now()
 	s.Expires = s.Created.AddDate(0, defaultCookieAgeMonths, 0)
-	s.SessID = toUBase64(NewSaltString(saltsize))
+	s.SessID = toUBase64(NewSaltString(defaultSaltSize))
 	if save {
 		s.Save()
 	}
