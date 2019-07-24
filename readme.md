@@ -58,8 +58,12 @@ using `context.Any("/login/", handlerFunc)` (heuristic) so you can use either GE
 to test the example, for example:
 
 - http://localhost/register/?user=admin&pass=password  
+  http://localhost/register/?user=admin&pass=password&keep=1 or  
+  http://localhost/register/?user=admin&pass=password&keep=true
   create user and a new session for the user, or fails if we allready have the user record.
 - http://localhost/login/?user=admin&pass=password  
+- http://localhost/login/?user=admin&pass=password&keep=1 or  
+- http://localhost/login/?user=admin&pass=password&keep=true  
   loggs client in, creates session or fails if the password isn't valid.
 - http://localhost/logout/  
   loggs client out, destroys session or fails if client is not logged in.
