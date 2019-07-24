@@ -8,6 +8,8 @@ so easily conforms to other data-systems.
 
 **FEATURES**
 
+- Cookie session IDs will not collide if running servers on different ports.  
+  SessionID Cookie.Name is based on AppID and the Port used. (I.E. "appname8080")
 - User salt and hash table generation
 - Validate User password
 - Client (browser) session create, destroy and validate
