@@ -35,46 +35,15 @@ func (s *Session) IsValid() bool {
 	return time.Now().Before(s.Expires)
 }
 
-// Refresh1 will update the `Session.Expires` date AND
-// the `SessID` with new values.
-//
-// Set cookieAgeHours to -1 to fallback to `defaultCookieAgeHours`.
-//
-// if andSave is true, the record is updated in the database.
-func (s *Session) Refresh1(cookieAgeHours int, andSave bool) {
-	s.Created = time.Now()
-	hrs := defaultCookieAgeHours
-	if cookieAgeHours != -1 {
-		hrs = cookieAgeHours
-	}
-	s.Expires = s.Created.Add(durationHrs(hrs))
-	s.SessID = toUBase64(NewSaltString(saltsize))
-	if andSave {
-		s.Save()
-	}
-}
-
 // Refresh will update the `Session.Expires` date AND
 // the `SessID` with new values.
 //
-// Set cookieAgeHours to -1 to fallback to `defaultCookieAgeHours`.
+// Note that this does not store a http.Cookie.
 //
-// if andSave is true, the record is updated in the database.
-func (s *Session) Refresh(andSave bool) {
+// if save is true, the record is updated in [database].[sessions] table.
+func (s *Session) Refresh(save bool) {
 	s.Created = time.Now()
 	s.Expires = s.Created.AddDate(0, defaultCookieAgeMonths, 0)
-	s.SessID = toUBase64(NewSaltString(saltsize))
-	if andSave {
-		s.Save()
-	}
-}
-
-// Refresh2 allows us to add years, moths and days to cookie
-// expiration date.  If all are set to zero is equivelant to
-// `session.Expires = time.Now()`.
-func (s *Session) Refresh2(save bool, years, months, days int) {
-	s.Created = time.Now()
-	s.Expires = s.Created.AddDate(years, months, days)
 	s.SessID = toUBase64(NewSaltString(saltsize))
 	if save {
 		s.Save()
