@@ -1,4 +1,6 @@
-package main
+// +build sessembed
+
+package session
 
 import (
 	"fmt"
@@ -7,8 +9,6 @@ import (
 	"regexp"
 	"strings"
 	"time"
-
-	"github.com/tfwio/session"
 )
 
 type (
@@ -24,14 +24,6 @@ type (
 		Status bool        `json:"status"`
 		Detail string      `json:"detail"`
 		Data   interface{} `json:"data,omitempty"`
-	}
-	// Configuration is not required with exception to this little demo ;)
-	Configuration struct {
-		appID      string
-		Host       string
-		Port       string
-		DataSystem string
-		DataSource string
 	}
 	// FormSession will collect form data.
 	FormSession struct {
@@ -49,6 +41,15 @@ type (
 		AdvanceOnKeepDay   int
 		UnsafeURI          []string
 		CheckURIHandler    UnsafeURIHandler
+	}
+	// Service is not required with exception to this little demo ;)
+	Service struct {
+		Conf       ServiceConf
+		AppID      string
+		Host       string
+		Port       string
+		DataSystem string
+		DataSource string
 	}
 )
 
@@ -71,18 +72,20 @@ const (
 )
 
 var (
+	service = Service{
+		Conf: ServiceConf{
+			KeyResponse:        KeyGinSessionValid,
+			AdvanceOnKeepYear:  defaultAdvanceYear,
+			AdvanceOnKeepMonth: defaultAdvanceMonth,
+			AdvanceOnKeepDay:   defaultAdvanceDay,
+			UnsafeURI:          wrapup(strings.Split("index,this,that", ",")...),
+			CheckURIHandler:    unsafeURIHandlerRx,
+			FormSession:        FormSession{User: formUser, Pass: formPass, Keep: formKeep}},
+	}
 	// SessionConfiguration is our live configuration.
 	// It stores default form element names and a key that
 	// will be made available to all http.Request responses
 	// that are marked unsafe (to be checked for a valid sesison).
-	sessConfig = ServiceConf{
-		KeyResponse:        KeyGinSessionValid,
-		AdvanceOnKeepYear:  defaultAdvanceYear,
-		AdvanceOnKeepMonth: defaultAdvanceMonth,
-		AdvanceOnKeepDay:   defaultAdvanceDay,
-		UnsafeURI:          wrapup(strings.Split("index,this,that", ",")...),
-		CheckURIHandler:    UnsafeURIHandlerRx,
-		FormSession:        FormSession{User: formUser, Pass: formPass, Keep: formKeep}}
 )
 
 // AddDate uses ServiceConf defaults to push an expiration date forward.
@@ -95,8 +98,8 @@ func (s *ServiceConf) AddDate(value interface{}) time.Time {
 	case time.Time:
 		result = t.AddDate(s.AdvanceOnKeepYear, s.AdvanceOnKeepMonth, s.AdvanceOnKeepDay)
 		break
-	case *session.Session:
-	case session.Session:
+	case *Session:
+	case Session:
 		result = t.Created.AddDate(s.AdvanceOnKeepYear, s.AdvanceOnKeepMonth, s.AdvanceOnKeepDay)
 		break
 	default:
@@ -110,9 +113,9 @@ func (s *ServiceConf) AddDate(value interface{}) time.Time {
 // GetFormSession gets form values from http.Request
 func GetFormSession(r *http.Request) FormSession {
 	return FormSession{
-		User: r.FormValue(sessConfig.User),
-		Pass: r.FormValue(sessConfig.Pass),
-		Keep: r.FormValue(sessConfig.Keep),
+		User: r.FormValue(service.Conf.User),
+		Pass: r.FormValue(service.Conf.Pass),
+		Keep: r.FormValue(service.Conf.Keep),
 	}
 }
 func (f *FormSession) hasUser() bool { return f.User != "" }
@@ -121,20 +124,43 @@ func (f *FormSession) hasKeep() bool { return f.Keep != "" && (f.Keep == "true" 
 
 // OverrideSessionConfig I'm not sure why I put this here.
 // We could just explicitly set it or a variable within.
-func OverrideSessionConfig(c ServiceConf) {
-	sessConfig = c
+func (s *Service) OverrideSessionConfig(c ServiceConf) {
+	s.Conf = c
+}
+
+// OverrideSessionConfig2 lets us explicitly override all
+// Session Service values.
+func (s *Service) OverrideSessionConfig2(
+	advY, advM, advD int,
+	frmUser, frmPass, frmKeep string,
+	rKey string,
+	uriHandler UnsafeURIHandler,
+	unsafeURI ...string) {
+	if advY != -1 {
+		s.Conf.AdvanceOnKeepYear = advY
+	}
+	if advM != -1 {
+		s.Conf.AdvanceOnKeepMonth = advM
+	}
+	if advD != -1 {
+		s.Conf.AdvanceOnKeepDay = advD
+	}
+	s.Conf.KeyResponse = rKey
+	s.Conf.UnsafeURI = unsafeURI
+	s.Conf.CheckURIHandler = uriHandler
+	s.Conf.FormSession = FormSession{User: "user", Pass: "pass", Keep: "keep"}
 }
 
 // UnsafeURIHandlerRx uses a simple regular expression to validate
 // wether or not the URI is unsafe.
-func UnsafeURIHandlerRx(uri, unsafe string) bool {
+func unsafeURIHandlerRx(uri, unsafe string) bool {
 	regexp.MatchString(fmt.Sprintf(baseMatchFmt, unsafe), uri)
 	return strings.Contains(uri, unsafe)
 }
 
-func isunsafe(input string) (bool, string) {
-	for _, unsafe := range sessConfig.UnsafeURI {
-		if sessConfig.CheckURIHandler(input, unsafe) {
+func (s *Service) isunsafe(input string) (bool, string) {
+	for _, unsafe := range service.Conf.UnsafeURI {
+		if s.Conf.CheckURIHandler(input, unsafe) {
 			return true, unsafe
 		}
 	}
@@ -144,7 +170,7 @@ func isunsafe(input string) (bool, string) {
 func wrapup(inputs ...string) []string {
 	data := inputs
 	for i, handler := range data {
-		data[i] = strings.TrimRight(session.WReapLeft("/", handler), "/")
+		data[i] = strings.TrimRight(WReapLeft("/", handler), "/")
 		// println(data[i])
 	}
 	return data

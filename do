@@ -14,5 +14,11 @@ for i in ${@}; do
     echo go build ./examples/srv
     go build ./examples/srv
     ;;
+    srv2)
+    echo go clean
+    go clean
+    echo go build -tags sessembed ./examples/srv2
+    go build -tags sessembed ./examples/srv2
+    ;;
   esac
 done

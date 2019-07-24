@@ -53,6 +53,16 @@ or just bash
 go build ./examples/srv
 ```
 
+The `./examples/srv2` example is the same as the `./examples/srv` with
+exception to the fact that we're using a build tag such as `-tags sessembed`
+to compile it embedded in the sessions library.  This mode is a bit clunky at
+the moment and will be consolidated into the project a bit more seemlessly in the
+future.
+
+```bash
+go build ./examples/srv
+```
+
 The example uses `127.0.0.1:5500` as the default host/port and serves the following URIs
 using `context.Any("/login/", handlerFunc)` (heuristic) so you can use either GET or PUT
 to test the example, for example:
@@ -87,7 +97,7 @@ callback function checks the incoming URI, and is looking to return true for "un
 For example, in the main.go (declares `main()`) the example creates the configuration:
 
 ```golang
-	OverrideSessionConfig(SessConfig{
+	OverrideSessionConfig(ServiceConf{
 		KeyResponse:        KeyGinSessionValid,  // gin-session-isValid
 		AdvanceOnKeepYear:  defaultAdvanceYear,  // 0
 		AdvanceOnKeepMonth: defaultAdvanceMonth, // 6
