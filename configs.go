@@ -48,6 +48,8 @@ func durationHrs(hr int) time.Duration {
 	return defaultSessionLength
 }
 
+// acceptable client is of type: gin.Context, nil and string.
+// http.Request has no support and will break (predictable) operation.
 func getClientString(client interface{}) string {
 
 	clistr := ""
@@ -57,6 +59,7 @@ func getClientString(client interface{}) string {
 		clistr = toUBase64(c.ClientIP())
 		break
 	case *http.Request:
+		// note that this is never going to be consistent.
 		clistr = toUBase64(c.RemoteAddr)
 		break
 	case string:
