@@ -60,7 +60,13 @@ This example can be compiled witout using GO111MODULES.
 To compile the CLI app, run the following from the root directory.
 
 ```bash
-go build ./crypt.cli
+go build ./examples/cli
+```
+
+Or use the build helper (bash) script `./do cli`
+
+```bash
+./do cli
 ```
 
 The tool allows you to (1) `create` a user/password which includes generation of
