@@ -3,3 +3,6 @@ data.db
 go.sum
 crypt.cli.exe
 sess.exe
+srv.exe
+ormus.db3
+gin.exe
