@@ -34,7 +34,7 @@ var (
 func main() {
 
 	session.CookieDefaults(
-		12,    // 12h expiration applies to cookies and sessions
+		12,    // 12h expiration [db].[sessions] table, not so much cookies.
 		true,  // httpOnly
 		false, // if true, cookies will not be visible to the client/user for example, in chrome.
 	)
