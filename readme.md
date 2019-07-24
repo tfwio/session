@@ -94,31 +94,6 @@ There is a provided mechanism for checking for "unsafe" URI.  The default heuris
 uses a simple regular expression and a list of uri start-paths for example our
 callback function checks the incoming URI, and is looking to return true for "unsafe".
 
-For example, in the main.go (declares `main()`) the example creates the configuration:
-
-```golang
-	OverrideSessionConfig(ServiceConf{
-		KeyResponse:        KeyGinSessionValid,  // gin-session-isValid
-		AdvanceOnKeepYear:  defaultAdvanceYear,  // 0
-		AdvanceOnKeepMonth: defaultAdvanceMonth, // 6
-    AdvanceOnKeepDay:   defaultAdvanceDay,   // 0
-    // I suppose I could have just said: `[]string{"/index/", "/this/", "/that/"}`
-		UnsafeURI:          wrapup(strings.Split("index,this,that", ",")...),
-		// CheckURIHandler:    UnsafeURIHandlerRx,
-		CheckURIHandler: func(uri, unsafe string) bool {
-			regexp.MatchString(fmt.Sprintf("^%s", unsafe), uri)
-			return strings.Contains(uri, unsafe)
-		},
-		// these are expected form GET/POST params: "user", "pass" and "keep"
-		FormSession: FormSession{User: "user", Pass: "pass", Keep: "keep"}})
-```
-In the above snipit, the `UnsafeURI` is provided a list of strings that looks
-more like `x.UnsafeURI = []string{"/index/", "/this/", "that"}`.  
-The **AdvanceOnKeep{Year,Month,Day}** part applies to data stored to our `[db].[sessions]`
-table when a session is created or renewed.  If we're not going to **KeepAlive** the
-session, then the cookie sent to the client (browser) is told to expire when the
-browser is closed and they'll have to log back in when loading the web-app again.
-
 
 example: **CLI executable**
 
