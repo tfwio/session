@@ -8,13 +8,14 @@ import (
 
 // Session represents users who are logged in.
 type Session struct {
-	ID      int64     `gorm:"auto_increment;unique_index;primary_key;column:id"`
-	UserID  int64     `gorm:"column:user_id"` // [users].[id]
-	Host    string    `gorm:"column:host"`    // running multiple server instance/port(s)?
-	Created time.Time `gorm:"not null;column:created"`
-	Expires time.Time `gorm:"not null;column:expires"`
-	SessID  string    `gorm:"not null;column:sessid"`
-	Client  string    `gorm:"not null;column:cli-key"` // .Request.RemoteAddr
+	ID        int64     `gorm:"auto_increment;unique_index;primary_key;column:id"`
+	UserID    int64     `gorm:"column:user_id"` // [users].[id]
+	Host      string    `gorm:"column:host"`    // running multiple server instance/port(s)?
+	Created   time.Time `gorm:"not null;column:created"`
+	Expires   time.Time `gorm:"not null;column:expires"`
+	SessID    string    `gorm:"not null;column:sessid"`
+	Client    string    `gorm:"not null;column:cli-key"` // .Request.RemoteAddr
+	KeepAlive bool      `gorm:"column:keep-alive"`
 }
 
 // TableName Set User's table name to be `users`
@@ -24,6 +25,9 @@ func (Session) TableName() string {
 
 // IsValid returns if the session is expired.
 // If `Session.ID` == 0, then it just returns `false`.
+//
+// This is only valid for when we've looked up the session
+// through using a client-browser-cookie prior.
 func (s *Session) IsValid() bool {
 	if s.ID == 0 {
 		return false
@@ -31,13 +35,13 @@ func (s *Session) IsValid() bool {
 	return time.Now().Before(s.Expires)
 }
 
-// Refresh will update the `Session.Expires` date AND
+// Refresh1 will update the `Session.Expires` date AND
 // the `SessID` with new values.
 //
 // Set cookieAgeHours to -1 to fallback to `defaultCookieAgeHours`.
 //
 // if andSave is true, the record is updated in the database.
-func (s *Session) Refresh(cookieAgeHours int, andSave bool) {
+func (s *Session) Refresh1(cookieAgeHours int, andSave bool) {
 	s.Created = time.Now()
 	hrs := defaultCookieAgeHours
 	if cookieAgeHours != -1 {
@@ -46,6 +50,33 @@ func (s *Session) Refresh(cookieAgeHours int, andSave bool) {
 	s.Expires = s.Created.Add(durationHrs(hrs))
 	s.SessID = toUBase64(NewSaltString(saltsize))
 	if andSave {
+		s.Save()
+	}
+}
+
+// Refresh will update the `Session.Expires` date AND
+// the `SessID` with new values.
+//
+// Set cookieAgeHours to -1 to fallback to `defaultCookieAgeHours`.
+//
+// if andSave is true, the record is updated in the database.
+func (s *Session) Refresh(andSave bool) {
+	s.Created = time.Now()
+	s.Expires = s.Created.AddDate(0, defaultCookieAgeMonths, 0)
+	s.SessID = toUBase64(NewSaltString(saltsize))
+	if andSave {
+		s.Save()
+	}
+}
+
+// Refresh2 allows us to add years, moths and days to cookie
+// expiration date.  If all are set to zero is equivelant to
+// `session.Expires = time.Now()`.
+func (s *Session) Refresh2(save bool, years, months, days int) {
+	s.Created = time.Now()
+	s.Expires = s.Created.AddDate(years, months, days)
+	s.SessID = toUBase64(NewSaltString(saltsize))
+	if save {
 		s.Save()
 	}
 }

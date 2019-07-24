@@ -28,7 +28,7 @@ func UserGetList() map[int64]User {
 	defer db.Close()
 	if !err {
 		db.Find(&users)
-		fmt.Printf("- found %d entries\n", len(users))
+		// fmt.Printf("- found %d entries\n", len(users))
 		for _, x := range users {
 			usermap[x.ID] = x
 		}
@@ -52,7 +52,7 @@ func (u *User) ByName(name string) bool {
 			result = true
 		}
 	}
-	fmt.Printf("!-> FOUND %s, %d\n", u.Name, u.ID)
+	// fmt.Printf("!-> FOUND %s, %d\n", u.Name, u.ID)
 	return result
 }
 
@@ -66,12 +66,12 @@ func (u *User) ByID(id int64) bool {
 	return u.ID == id
 }
 
-// CreateSession32 creates sessioni with a default salt size.
+// CreateSession32 creates session with a default salt size of 32 bytes.
 //
 // the `r interface{}` is expected to be a `*gin.Context` so that
 // we can provide the sessions table a client IP for the `[cli-key]` column.
-func (u *User) CreateSession32(r interface{}, hours int, host string) (bool, Session) {
-	return u.CreateSession(r, hours, host, 32)
+func (u *User) CreateSession32(r interface{}, host string) (bool, Session) {
+	return u.CreateSession(r, host, 32)
 }
 
 // CreateSession Save a session into the sessions table.
@@ -85,7 +85,7 @@ func (u *User) CreateSession32(r interface{}, hours int, host string) (bool, Ses
 //
 // FIXME: we should be checking if there is a existing record in sessions table
 // and re-using it for the user executing UPDATE as opposed to CREATE.
-func (u *User) CreateSession(r interface{}, hours int, host string, saltSize int) (bool, Session) {
+func (u *User) CreateSession(r interface{}, host string, saltSize int) (bool, Session) {
 
 	t := time.Now()
 	ss := saltsize
@@ -98,7 +98,7 @@ func (u *User) CreateSession(r interface{}, hours int, host string, saltSize int
 		UserID:  u.ID,
 		SessID:  toUBase64(NewSaltString(ss)),
 		Created: t,
-		Expires: t.Add(durationHrs(hours)),
+		Expires: t.AddDate(0, defaultCookieAgeMonths, 0),
 	}
 
 	sess.Client = getClientString(r)
@@ -167,7 +167,7 @@ func (u *User) validate(pass string) bool {
 // we use the user's [name] to find the table-record
 // and then validate the password.
 func (u *User) ValidatePassword(pass string) bool {
-	fmt.Println("==> ValidatePassword")
+	// fmt.Println("==> ValidatePassword")
 	// open the database
 	db, err := iniC("error(validate-password) loading database\n")
 	if err {
@@ -181,13 +181,13 @@ func (u *User) ValidatePassword(pass string) bool {
 
 	if db.RowsAffected == 0 && tempUser.Name != u.Name {
 		db.Close()
-		fmt.Println("Record not found")
+		// fmt.Println("Record not found")
 		return false
 	}
 
 	defer db.Close()
 	if tempUser.Name != u.Name {
-		fmt.Printf("- no user found. %v\n", tempUser)
+		// fmt.Printf("- no user found. %v\n", tempUser)
 	} else {
 		result = tempUser.validate(pass)
 	}
@@ -238,10 +238,10 @@ func (u *User) ValidateSessionByUserID(host string, client *gin.Context) bool {
 	}
 
 	if time.Now().Before(sess.Expires) {
-		fmt.Println("  --> SESSION NOT EXPIRED")
+		// fmt.Println("  --> SESSION NOT EXPIRED")
 		return true
 	}
-	fmt.Println("  --> SESSION EXPIRED")
+	// fmt.Println("  --> SESSION EXPIRED")
 
 	return false
 }
