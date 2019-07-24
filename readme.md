@@ -146,7 +146,7 @@ Finally, we can call the following to show each user-session stored in the sessi
 
 [crypt.cli/sess.go]:            crypt.cli/sess.go
 [service-config]:               https://github.com/tfwio/session/blob/2c2adb376cde8c0b31d269f8686df51d0f64eb62/examples/srv/main.go#L14
-[crypt-override]:               https://github.com/tfwio/session/blob/7c101cae41533a59124cac9b1664e5deb354b429/crypt.go#L23 "crypt.go OverrideCrypto(…)"
+[crypt-override]:               https://github.com/tfwio/session/blob/7c101cae41533a59124cac9b1664e5deb354b429/crypt.go#L16 "crypt.go OverrideCrypto(…)"
 [ClientIP]:                     https://github.com/gin-gonic/gin/blob/f98b339b773105aad77f321d0baaa30475bf875d/context.go#L690
 [GORM]:                         https://github.com/jinzhu/gorm
 [github.com/gin-gonic/gin]:     https://github.com/gin-gonic/gin
