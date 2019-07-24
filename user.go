@@ -113,15 +113,10 @@ func (u *User) CreateSession(r interface{}, host string, saltSize int) (bool, Se
 //
 // Returns
 // (-1) `db.Open`,
-// (1) `User.Name` or `User.Pass` < `len(5)`
+// (2) `User.Name` or `User.Pass` < `len(5)`
 // (1) `User.Name` exists
 // (0) on success
-func (u *User) Create(name string, pass string, saltSize int) int {
-
-	mysalt := defaultSaltSize
-	if saltSize != -1 {
-		mysalt = saltSize
-	}
+func (u *User) Create(name string, pass string) int {
 
 	if len(name) < 5 {
 		return 2
@@ -139,7 +134,7 @@ func (u *User) Create(name string, pass string, saltSize int) int {
 		return -1
 	}
 
-	bsalt := NewSaltCSRNG(mysalt)
+	bsalt := NewSaltCSRNG(defaultSaltSize)
 	u.Name = name
 	u.Salt = bytesToBase64(bsalt)
 	u.Hash = bytesToBase64(GetPasswordHash(pass, bsalt))
