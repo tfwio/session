@@ -31,14 +31,18 @@ func (s *Service) attachRoutesAndMiddleware(engine *gin.Engine) {
 
 func (s *Service) sessMiddleware(g *gin.Context) {
 	yn := false
-	if result, name := s.isunsafe(g.Request.RequestURI); result {
+	result, name := s.isunsafe(g.Request.RequestURI)
+	if result {
+
 		yn = QueryCookieValidate(s.SessHost(), g)
+
 		// from here we could perhaps abort a response.
 		if !yn {
 			g.String(http.StatusForbidden, "ABORT(%s)!", name)
 			g.Abort()
 		}
 	}
+	fmt.Fprintf(os.Stderr, "sess unsafe: %v, aprooved: %v\n", result, yn)
 	// a flag to check on the status in our actual handler.
 	// use `g.Get(<Key>)` from responseHandler
 	g.Set(s.KeyResponse, yn)
@@ -65,7 +69,10 @@ func (s *Service) serveUserStatus(g *gin.Context) {
 	sh := s.SessHost()
 	if sess, success := QueryCookie(sh, g); success {
 		fmt.Fprintf(os.Stderr, "HOST: %s, CRD: %s, EXP: %s\n", sh, sess.Created.Format(tfmt), sess.Expires.Format(tfmt))
-		if u, success := sess.GetUser(); success && sess.IsValid() {
+		u, success := sess.GetUser()
+		isvalid := sess.IsValid()
+		fmt.Fprintf(os.Stderr, "gotuser: %v, isvalid: %v\n", success, isvalid)
+		if success && isvalid {
 			if sess.KeepAlive {
 				sess.Refresh(true)
 				SetCookieExpires(g, sh, sess.SessID, sess.Expires)
