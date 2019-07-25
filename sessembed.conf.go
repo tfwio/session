@@ -56,32 +56,24 @@ const (
 	actionLogout             = "logout"
 	actionRegister           = "register"
 	actionStatus             = "status"
-	formUser                 = "user"
-	formPass                 = "pass"
-	formKeep                 = "keep"
-	defaultAdvanceYear       = 0
-	defaultAdvanceMonth      = 6
-	defaultAdvanceDay        = 0
+	actionUnregister         = "unregister" // not implemented yet
 	baseMatchFmt             = "^%s"
 )
 
 var (
 	service = Service{
-		AppID:              "sessions_demo",
+		AppID:              "session",
 		Port:               ":5500",
 		CookieSecure:       false,
 		CookieHTTPOnly:     true,
-		AdvanceOnKeepYear:  defaultAdvanceYear,  // 0
-		AdvanceOnKeepMonth: defaultAdvanceMonth, // 6
-		AdvanceOnKeepDay:   defaultAdvanceDay,   // 0
+		AdvanceOnKeepYear:  0,
+		AdvanceOnKeepMonth: 6,
+		AdvanceOnKeepDay:   0,
 		KeyResponse:        defaultKeySessionIsValid,
 		UnsafeURI:          WrapURIPathString("index,this,that"),
 		// this is identical to default uri-handler (set CheckURIHandler to nil for default)
-		CheckURIHandler: func(uri, unsafe string) bool {
-			regexp.MatchString(fmt.Sprintf(baseMatchFmt, unsafe), uri)
-			return strings.Contains(uri, unsafe)
-		},
-		FormSession: FormSession{User: formUser, Pass: formPass, Keep: formKeep},
+		CheckURIHandler: unsafeURIHandlerRx,
+		FormSession:     FormSession{User: "user", Pass: "pass", Keep: "keep"},
 	}
 	// SessionConfiguration is our live configuration.
 	// It stores default form element names and a key that
