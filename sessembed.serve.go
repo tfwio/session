@@ -51,7 +51,7 @@ func (s *Service) sessMiddleware(g *gin.Context) {
 		g.String(http.StatusForbidden, "ABORT(%s)!", ename)
 		g.Abort()
 	}
-	fmt.Fprintf(os.Stderr, "check: %v/%s, enforce: %v/%s, result: %v\n", check, cname, enforce, ename, issecure)
+	fmt.Fprintf(os.Stderr, "check: %v/%s, enforce: %v/%s, result: %v, URI: %s\n", check, cname, enforce, ename, issecure, g.Request.RequestURI)
 	// a flag to check on the status in our actual handler.
 	// use `g.Get(<Key>)` from responseHandler
 	g.Next() // (calling this probably isn't necessary)
