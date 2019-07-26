@@ -52,6 +52,8 @@ func Cat(pInputString ...string) string {
 
 // WrapURIPathArray wraps up a list of strings such as `[]string{"a", "b", "c"}`
 // into a URI path such as `[]string{"/a/", "/b/", "/c/"}`
+//
+// We don't really advise using this it was just an initial test.
 func WrapURIPathArray(inputs ...string) []string {
 	data := inputs
 	for i, handler := range data {
@@ -69,5 +71,23 @@ func WrapURIPathArray(inputs ...string) []string {
 //
 // See: WrapURIPathArray
 func WrapURIPathString(input string) []string {
-	return WrapURIPathArray(strings.Split("index,this,that", ",")...)
+	return WrapURIPathArray(strings.Split(input, ",")...)
+}
+
+// WrapURIPathString splits CDF by "," and trims leading/trailing space,
+// then appends "^" to the string since we're "regexp" matching
+// uri paths with strings put here ;)
+//
+// Aside from that, we leave input content in tact for use in "regexp".
+//
+// Remember that by the time the response hits the server, it strips
+// content such as "/json/" of its last slash ("/json") so don't forget
+// we can use the dollar symbol ("$") when expecting end of URI.
+func WrapURIExpression(input string) []string {
+	data := strings.Split(input, ",")
+	for i, handler := range data {
+		str := strings.Trim(" ", handler)
+		data[i] = str
+	}
+	return data
 }
