@@ -127,7 +127,7 @@ If no regexp string(s) is supplied to `Service.URICheck` or `Service.URIEnforce`
 service useless ;)
 
 `Service.MatchExpHandler` default:
-```
+```golang
 // DefaultMatchExpHandler uses a simple regular expression to validate
 // wether or not the URI session is to be validated.
 func DefaultMatchExpHandler(uri, expression string) bool {
@@ -139,7 +139,7 @@ func DefaultMatchExpHandler(uri, expression string) bool {
 ```
 
 `Service.URIAbortHandler` default:
-```
+```golang
 // DefaultURIAbortHandler is the default abort handler.
 // It simply prints "authorization required" and serves "unauthorized" http
 // response 401 aborting further processing.
