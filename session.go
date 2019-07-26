@@ -10,10 +10,10 @@ import (
 type Session struct {
 	ID        int64     `gorm:"auto_increment;unique_index;primary_key;column:id"`
 	UserID    int64     `gorm:"column:user_id"` // [users].[id]
-	Host      string    `gorm:"column:host"`    // running multiple server instance/port(s)?
+	SessID    string    `gorm:"not null;column:sessid"`
+	Host      string    `gorm:"column:host"` // running multiple server instance/port(s)?
 	Created   time.Time `gorm:"not null;column:created"`
 	Expires   time.Time `gorm:"not null;column:expires"`
-	SessID    string    `gorm:"not null;column:sessid"`
 	Client    string    `gorm:"not null;column:cli-key"` // .Request.RemoteAddr
 	KeepAlive bool      `gorm:"column:keep-alive"`
 }
