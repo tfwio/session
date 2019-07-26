@@ -12,6 +12,7 @@ so easily conforms to other data-systems.
 - freshly brewed.
 - [*todo/feature*] One session on one client (browser session / IP) is allowed per User once initial session is created.  (can easily be modified)  
   Will likely fix this soon.
+- theres no Unregister function/routeHandler!
 
 ----
 
