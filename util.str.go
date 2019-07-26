@@ -74,7 +74,7 @@ func WrapURIPathString(input string) []string {
 	return WrapURIPathArray(strings.Split(input, ",")...)
 }
 
-// WrapURIPathString splits CDF by "," and trims leading/trailing space,
+// WrapURIExpression splits CDF by "," and trims leading/trailing space,
 // then appends "^" to the string since we're "regexp" matching
 // uri paths with strings put here ;)
 //
