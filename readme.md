@@ -37,10 +37,11 @@ import (
 var (
 	service = session.Service{
 		AppID:              "sessions_demo",
-		Port:               ":5500",    // Port is used for
-		CookieHTTPOnly:     true,       // hymmm
-		CookieSecure:       false,      // we want to see em in the browser
-		KeySessionIsValid:  "is-valid", // default: session.isValid
+		Port:               ":5500",       // Port is used for
+		CookieHTTPOnly:     true,          // hymmm
+		CookieSecure:       false,         // we want to see em in the browser
+		KeySessionIsValid:   "is-valid",   // is also what is used by default if not provided
+		KeySessionIsChecked: "is-checked", // is also what is used by default if not provided
 		AdvanceOnKeepYear:  0,
 		AdvanceOnKeepMonth: 6,
 		AdvanceOnKeepDay:   0,
