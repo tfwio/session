@@ -57,7 +57,7 @@ func Cat(pInputString ...string) string {
 func WrapURIPathArray(inputs ...string) []string {
 	data := inputs
 	for i, handler := range data {
-		str := strings.Trim(" ", handler)
+		str := strings.Trim(handler, " ")
 		if str == "/" {
 			data[i] = str
 		} else {
@@ -86,7 +86,7 @@ func WrapURIPathString(input string) []string {
 func WrapURIExpression(input string) []string {
 	data := strings.Split(input, ",")
 	for i, handler := range data {
-		str := strings.Trim(" ", handler)
+		str := strings.Trim(handler, " ")
 		data[i] = str
 	}
 	return data
