@@ -1,6 +1,3 @@
-status: in development  
-*valid sessoins have been broken in the last few commits*
-
 
 A session package intended to provide some foundation which may be cusomized and
 implemented, perhaps useful in [github.com/gin-gonic/gin] middleware aside any other heuristic it can be wired to.
@@ -18,15 +15,12 @@ Filter URI in middleware
 
 **LIMITATIONS**
 
-Each of these limitations is a blessing in disguise 😁
-
 - freshly brewed.
 - [*todo/feature*] One session on one client (browser session / IP) is allowed per User once initial session is created.  (can easily be modified)  
   Will likely fix this soon.
 
 
 **EXAMPLES**
-
 
 example: **CLI executable**
 
