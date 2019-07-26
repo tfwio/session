@@ -75,7 +75,7 @@ func WrapURIPathString(input string) []string {
 }
 
 // WrapURIExpression splits CDF by "," and trims leading/trailing space,
-// then appends "^" to the string since we're "regexp" matching
+// then prepends "^" to the string since we're "regexp" matching
 // uri paths with strings put here ;)
 //
 // Aside from that, we leave input content in tact for use in "regexp".
