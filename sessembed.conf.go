@@ -76,7 +76,20 @@ const (
 )
 
 var (
-	service = Service{
+	service *Service
+	// SessionConfiguration is our live configuration.
+	// It stores default form element names and a key that
+	// will be made available to all http.Request responses
+	// that are marked unsafe (to be checked for a valid sesison).
+)
+
+// DefaultService creates/returns a default session service configuration
+// with no URIEnforce or URICheck definitions.
+//
+// This construct can be further configured, then supplied to
+// the call to SetupService.
+func DefaultService() *Service {
+	return &Service{
 		AppID:               "session",
 		Port:                ":5500",
 		CookieSecure:        false,
@@ -92,11 +105,7 @@ var (
 		VerboseCheck: false,
 		FormSession:  FormSession{User: "user", Pass: "pass", Keep: "keep"},
 	}
-	// SessionConfiguration is our live configuration.
-	// It stores default form element names and a key that
-	// will be made available to all http.Request responses
-	// that are marked unsafe (to be checked for a valid sesison).
-)
+}
 
 // AddDate uses ServiceConf defaults to push an expiration date forward.
 // The `value` interface can of type `time.Time` or `session.Session`.
@@ -140,7 +149,7 @@ func (f *FormSession) hasKeep() bool { return f.Keep != "" && (f.Keep == "true" 
 //
 // Set saltSize or hashSize to -1 to persist internal defaults.
 func SetupService(value *Service, engine *gin.Engine, dbsys, dbsrc string, saltSize, hashSize int) {
-	service = *value
+	service = value
 	if engine != nil {
 
 		service.attachRoutesAndMiddleware(engine)
