@@ -42,8 +42,14 @@ type (
 		AdvanceOnKeepYear  int
 		AdvanceOnKeepMonth int
 		AdvanceOnKeepDay   int
-		UnsafeURI          []string
-		CheckURIHandler    UnsafeURIHandler
+		// supply a uri-path token such as "/json/" to check.
+		// We supply a `KeyResponse` for the responseHandler
+		// to utilize to handle the secure content manually.
+		URICheck []string
+		// Unlike URICheck, we'll abort a response for any URI
+		// path provided to this list if user is not logged in.
+		URIEnforce      []string
+		CheckURIHandler UnsafeURIHandler
 	}
 )
 
@@ -70,7 +76,8 @@ var (
 		AdvanceOnKeepMonth: 6,
 		AdvanceOnKeepDay:   0,
 		KeyResponse:        defaultKeySessionIsValid,
-		UnsafeURI:          WrapURIPathString("index,this,that"),
+		URIEnforce:         []string{},
+		URICheck:           []string{},
 		// this is identical to default uri-handler (set CheckURIHandler to nil for default)
 		CheckURIHandler: unsafeURIHandlerRx,
 		FormSession:     FormSession{User: "user", Pass: "pass", Keep: "keep"},
@@ -140,8 +147,8 @@ func unsafeURIHandlerRx(uri, unsafe string) bool {
 	return strings.Contains(uri, unsafe)
 }
 
-func (s *Service) isunsafe(input string) (bool, string) {
-	for _, unsafe := range service.UnsafeURI {
+func (s *Service) isunsafe(input string, inputs ...string) (bool, string) {
+	for _, unsafe := range inputs {
 		if s.CheckURIHandler(input, unsafe) {
 			return true, unsafe
 		}

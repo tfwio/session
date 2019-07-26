@@ -30,22 +30,30 @@ func (s *Service) attachRoutesAndMiddleware(engine *gin.Engine) {
 }
 
 func (s *Service) sessMiddleware(g *gin.Context) {
-	yn := false
-	result, name := s.isunsafe(g.Request.RequestURI)
-	if result {
 
-		yn = QueryCookieValidate(s.SessHost(), g)
-
-		// from here we could perhaps abort a response.
-		if !yn {
-			g.String(http.StatusForbidden, "ABORT(%s)!", name)
-			g.Abort()
-		}
+	var (
+		enforce, check bool
+		ename, cname   string
+	)
+	issecure := false
+	if len(s.URICheck) > 0 {
+		enforce, ename = s.isunsafe(g.Request.RequestURI, s.URICheck...)
 	}
-	fmt.Fprintf(os.Stderr, "sess unsafe: %v, aprooved: %v\n", result, yn)
+	if len(s.URIEnforce) > 0 {
+		check, cname = s.isunsafe(g.Request.RequestURI, s.URIEnforce...)
+	}
+	lookup := enforce || check // do we need to check?
+	if lookup {
+		issecure := QueryCookieValidate(s.SessHost(), g)
+		g.Set(s.KeyResponse, issecure)
+	}
+	if enforce && !issecure { // abort response.
+		g.String(http.StatusForbidden, "ABORT(%s)!", ename)
+		g.Abort()
+	}
+	fmt.Fprintf(os.Stderr, "check: %v/%s, enforce: %v/%s, result: %v\n", check, cname, enforce, ename, issecure)
 	// a flag to check on the status in our actual handler.
 	// use `g.Get(<Key>)` from responseHandler
-	g.Set(s.KeyResponse, yn)
 	g.Next() // (calling this probably isn't necessary)
 }
 

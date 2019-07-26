@@ -21,7 +21,8 @@ var (
 		AdvanceOnKeepYear:  0,          // 0
 		AdvanceOnKeepMonth: 6,          // 6
 		AdvanceOnKeepDay:   0,          // 0
-		UnsafeURI:          []string{"/index/", "/this/", "/that"},
+		URIEnforce:         []string{"/index/", "/this/", "/that"},
+		URICheck:           []string{},
 		CheckURIHandler:    nil,
 		FormSession:        session.FormSession{User: "user", Pass: "pass", Keep: "keep"},
 	}
