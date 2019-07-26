@@ -37,10 +37,10 @@ func (s *Service) sessMiddleware(g *gin.Context) {
 	)
 	issecure := false
 	if len(s.URICheck) > 0 {
-		enforce, ename = s.isunsafe(g.Request.RequestURI, s.URICheck...)
+		check, cname = s.isunsafe(g.Request.RequestURI, s.URICheck...)
 	}
 	if len(s.URIEnforce) > 0 {
-		check, cname = s.isunsafe(g.Request.RequestURI, s.URIEnforce...)
+		enforce, ename = s.isunsafe(g.Request.RequestURI, s.URIEnforce...)
 	}
 	lookup := enforce || check // do we need to check?
 	if lookup {
