@@ -134,6 +134,7 @@ func SetupService(value *Service, engine *gin.Engine, dbsys, dbsrc string, saltS
 	if engine != nil {
 		service.attachRoutesAndMiddleware(engine)
 		if service.CheckURIHandler == nil {
+			fmt.Fprintln(os.Stderr, "CheckURIHandler callback was nil; using default regexp validation.")
 			service.CheckURIHandler = unsafeURIHandlerRx
 		}
 	}
