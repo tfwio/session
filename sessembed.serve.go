@@ -42,14 +42,16 @@ func (s *Service) sessMiddleware(g *gin.Context) {
 	if len(s.URIEnforce) > 0 {
 		enforce, ename = s.isunsafe(g.Request.RequestURI, s.URIEnforce...)
 	}
+
 	lookup := enforce || check // do we need to check?
+	g.Set(s.KeySessionIsChecked, lookup)
+
 	if lookup {
 		issecure := QueryCookieValidate(s.SessHost(), g)
-		g.Set(s.KeyResponse, issecure)
+		g.Set(s.KeySessionIsValid, issecure)
 	}
-	if enforce && !issecure { // abort response.
-		g.String(http.StatusForbidden, "ABORT(%s)!", ename)
-		g.Abort()
+	if enforce && !issecure && s.URIAbortHandler != nil { // abort response.
+		s.URIAbortHandler(g, ename)
 	}
 	if service.VerboseCheck {
 		fmt.Fprintf(os.Stderr,

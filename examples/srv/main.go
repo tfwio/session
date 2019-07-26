@@ -17,20 +17,29 @@ var (
 		Port:               ":5500",    // Port is used for
 		CookieHTTPOnly:     true,       // hymmm
 		CookieSecure:       false,      // we want to see em in the browser
-		KeyResponse:        "is-valid", // default: session.isValid
-		AdvanceOnKeepYear:  0,          // 0
-		AdvanceOnKeepMonth: 6,          // 6
-		AdvanceOnKeepDay:   0,          // 0
-		URIEnforce:         []string{"/index/", "/this/", "/that"},
-		URICheck:           []string{},
-		CheckURIHandler:    nil,
-		FormSession:        session.FormSession{User: "user", Pass: "pass", Keep: "keep"},
+		KeySessionIsValid:  "is-valid", // default: session.isValid
+		AdvanceOnKeepYear:  0,
+		AdvanceOnKeepMonth: 6,
+		AdvanceOnKeepDay:   0,
+		// if regexp matches (our default check/handler), the httpResponse is aborted
+		// with a simple message.
+		//
+		// you could just use a string array.
+		URIEnforce: session.WrapURIExpression("^/index/?$,^/this/?$,^/that"),
+		// if one of these matches, we pass (using gin) `gin.Client.Set("is-valid", true)`
+		// so that in our handler we can check its status (`c.Get("is-valid")`) and handle accordingly.
+		// The **actual** key used ("is-valid") is stored to `Service.KeySessionIsValid`.
+		URICheck:        []string{},
+		URIMatchHandler: nil, // use default
+		URIAbortHandler: nil, // use default
+		// defaults the requestHandlers use to look up form values.
+		FormSession: session.FormSession{User: "user", Pass: "pass", Keep: "keep"},
 	}
 )
 
 //
 // we still need to provide some demo forms, however you can just use
-// get or post variables such as
+// get or post variables to view the xhr/json response(s).
 //
 // http://localhost:5500/login/?user=admin&pass=password
 // http://localhost:5500/login/?user=admin&pass=password&keep=true
@@ -52,7 +61,8 @@ func main() {
 	// at this point you can override the crypto settings
 	// session.OverrideCrypto(...)
 
-	// index is in _unSafeHandlers, so you must be logged in to view it.
+	// this "index" is defined in service.URIEnforce,
+	// so you must be logged in to view it.
 	engine.GET("/index/", func(g *gin.Context) {
 		g.String(http.StatusOK, "Hello")
 	})
