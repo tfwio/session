@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"os"
 	"regexp"
-	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -144,8 +143,10 @@ func SetupService(value *Service, engine *gin.Engine, dbsys, dbsrc string, saltS
 // UnsafeURIHandlerRx uses a simple regular expression to validate
 // wether or not the URI is unsafe.
 func unsafeURIHandlerRx(uri, unsafe string) bool {
-	regexp.MatchString(fmt.Sprintf(baseMatchFmt, unsafe), uri)
-	return strings.Contains(uri, unsafe)
+	if match, err := regexp.MatchString(fmt.Sprintf(baseMatchFmt, unsafe), uri); err == nil {
+		return match
+	}
+	return false
 }
 
 func (s *Service) isunsafe(input string, inputs ...string) (bool, string) {
