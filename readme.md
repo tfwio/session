@@ -5,88 +5,152 @@ implemented, perhaps useful in [github.com/gin-gonic/gin] middleware aside any o
 This package provides a secure logon session by utilizing a sqlite3 database via [GORM],
 so easily conforms to other data-systems.
 
-users: id name salt hash
+----
 
-sessions: id userid sessid created expires cli-key
-
-login logout stat register *!unregister*
-
-Filter URI in middleware
-
-**LIMITATIONS**
+**limitations**
 
 - freshly brewed.
 - [*todo/feature*] One session on one client (browser session / IP) is allowed per User once initial session is created.  (can easily be modified)  
   Will likely fix this soon.
 
+----
 
-**EXAMPLES**
+**getting started**
 
-example: **CLI executable**
+this is the source code as found in the [server example](./examples/srv).
 
-Another example implementation can be found in the [crypt.cli/sess.go] CLI app.
+```golang
+package main
 
-The CLI app is generally useful for looking at and configuring or testing User
-salt/hash settings, verifying a generated user-password, etc;
-not intended for use with or as a companion to the web-app.
+import (
+	"fmt"
+	"net/http"
 
-To compile:
-```bash
-go build ./examples/cli
+	_ "github.com/jinzhu/gorm/dialects/sqlite"
+	_ "github.com/mattn/go-sqlite3"
+
+	"github.com/gin-gonic/gin"
+	"github.com/tfwio/session"
+)
+
+var (
+	service = session.Service{
+		AppID:              "sessions_demo",
+		Port:               ":5500",    // Port is used for
+		CookieHTTPOnly:     true,       // hymmm
+		CookieSecure:       false,      // we want to see em in the browser
+		KeySessionIsValid:  "is-valid", // default: session.isValid
+		AdvanceOnKeepYear:  0,
+		AdvanceOnKeepMonth: 6,
+		AdvanceOnKeepDay:   0,
+		// if regexp matches (our default check/handler), the httpResponse is aborted
+		// with a simple message.
+		//
+		// you could just use a string array.
+		URIEnforce: session.WrapURIExpression("^/index/?$,^/this/?$,^/that"),
+		// if one of these matches, we pass (using gin) `gin.Client.Set("is-valid", true)`
+		// so that in our handler we can check its status (`c.Get("is-valid")`) and handle accordingly.
+		// The **actual** key used ("is-valid") is stored to `Service.KeySessionIsValid`.
+		URICheck:        []string{},
+		URIMatchHandler: nil, // use default
+		URIAbortHandler: nil, // use default
+		// defaults the requestHandlers use to look up form values.
+		FormSession:     session.FormSession{User: "user", Pass: "pass", Keep: "keep"},
+	}
+)
+
+//
+// we still need to provide some demo forms, however you can just use
+// get or post variables to view the xhr/json response(s).
+//
+// http://localhost:5500/login/?user=admin&pass=password
+// http://localhost:5500/login/?user=admin&pass=password&keep=true
+// http://localhost:5500/register/?user=admin&pass=password
+// http://localhost:5500/register/?user=admin&pass=password&keep=true
+// http://localhost:5500/stat/
+// http://localhost:5500/logout/
+//
+
+func main() {
+
+	// optional; ensure absolute (working) data source path for sqlite3
+	// configuration.DataSource, _ = filepath.Abs(configuration.DataSource)
+
+	gin.SetMode(gin.ReleaseMode)
+	engine := gin.Default()
+
+	session.SetupService(&service, engine, "sqlite3", "./ormus.db", -1, -1)
+	// at this point you can override the crypto settings
+	// session.OverrideCrypto(...)
+
+	// this "index" is defined in service.URIEnforce,
+	// so you must be logged in to view it.
+	engine.GET("/index/", func(g *gin.Context) {
+		g.String(http.StatusOK, "Hello")
+	})
+	fauxHost := fmt.Sprintf("127.0.0.1%s", service.Port)
+	fmt.Printf("using host: \"%s\"\n", fauxHost)
+	engine.Run(fauxHost)
+}
 ```
 
-Or use the build helper (bash) script `./do cli`
+**dataset**
 
-```bash
-./do cli
+users table: `users: id name salt hash`
+
+sessions table: `sessions: id userid sessid host created expires cli-key keep-alive`
+
+* [host] value stores what is provided to the cookie name.  
+* [cli-key] is provided the client IP.
+
+**response handlers**
+
+current http response handlers:  
+`/login/` `/logout/` `/stat/` `/register/`  
+*!unregister*
+
+**middleware service configs**
+
+Regular expressions are used to validate URI path for two basic heuristics.
+
+- `Service.URICheck []string`: Regular expressions supplied here will push a boolean
+  value into `gin.Context.Set(key,value)` and `.Get` dictionary indicating wether
+  the response is valid.  A key "lookup" (`ctx.Get("lookup")`) value of false tells us
+  that checking for a valid session wasn't required.  If true, then the (deault)
+  "is-valid" key will report weather or not we have a valid session.
+- `Service.URIEnforce []string`: Regular expressions supplied here will, if we have
+  a valid session, continue to serve content.  If there is no valid session then
+  it will (by default settings) abort the httpRequest and report a simple string message.
+
+If no regexp string(s) is supplied to `Service.URICheck` or `Service.URIEnforce`
+(i.e. `len(x) == 0`) then no checks are performed and you've just rendered this
+service useless ;)
+
+`Service.MatchExpHandler` default:
+```
+// DefaultMatchExpHandler uses a simple regular expression to validate
+// wether or not the URI session is to be validated.
+func DefaultMatchExpHandler(uri, expression string) bool {
+	if match, err := regexp.MatchString(expression, uri); err == nil {
+		return match
+	}
+	return false
+}
 ```
 
-The tool allows you to (1) `create` a user/password which includes generation of
-a session for the user, (2) `validate` the user/password and (3) `list` all
-sessions including the user owning the session.
-
-Apparently if you attempt to create the same user twice, it will fail to generate the user however creates a new session.  
-The cli tool was written just to test creation and validation of user passwords as well as [GORM].
-
-For example, after you compile the CLI app...
-
-
-**generate a user**
-
-```bash
-./cli create -u admin -p password
+`Service.URIAbortHandler` default:
 ```
-generates the following output
-```text
-{1 admin dW6tmIxySUoV9SJr5OJ9aYH1b35QzuqpSoxo1KmHVIw33FpdM6asZ+Q0uYEFZ2fb K0Bt+bF4qiTNYMkrJ3tF7RdxGBjuV0zsDpV4htJ2B+U=}
-success: false; session={1 1 cli-example-app 2019-07-24 08:35:09.4055506 -0500 CDT m=+2.414109701 2020-01-24 08:35:09.4055506 -0600 CST RFNaT0JhQTNpM2xsRno0NmFkeURqdDJKeHpqRGxZQU8veUpjWnJocXkzSjYrR1BVUG8wejQ2QklJbzZ0NThSRA== dW5rbm93bi1jbGllbnQ= false}
-```
-**verify user password**
-```bash
-./cli validate -u admin -p doomedtofail
-```
-outputs
-```text
-Result: false
-```
-Lets try the working "password"
-```bash
-./cli validate -u admin -p password
-```
-outputs the following success
-```text
-Result: true
-```
-Finally, we can call the following to show each user-session stored in the sessions table including the user name.
-```bash
-./cli list
+// DefaultURIAbortHandler is the default abort handler.
+// It simply prints "authorization required" and serves "unauthorized" http
+// response 401 aborting further processing.
+func DefaultURIAbortHandler(ctx *gin.Context, ename string) {
+	ctx.String(http.StatusUnauthorized, "authorization required")
+	ctx.Abort()
+}
 ```
 
-[crypt.cli/sess.go]:            crypt.cli/sess.go
-[service-config]:               https://github.com/tfwio/session/blob/2c2adb376cde8c0b31d269f8686df51d0f64eb62/examples/srv/main.go#L14
-[crypt-override]:               https://github.com/tfwio/session/blob/7c101cae41533a59124cac9b1664e5deb354b429/crypt.go#L16 "crypt.go OverrideCrypto(…)"
-[ClientIP]:                     https://github.com/gin-gonic/gin/blob/f98b339b773105aad77f321d0baaa30475bf875d/context.go#L690
+
+
 [GORM]:                         https://github.com/jinzhu/gorm
 [github.com/gin-gonic/gin]:     https://github.com/gin-gonic/gin
-[GORM]:                         https://github.com/jinzhu/gorm
-[unsafe-handlers]:              https://github.com/tfwio/session/blob/053b1d9438caa8bac618b7c6a42f9756a518ab82/examples/srv/conf.go#L71
+
