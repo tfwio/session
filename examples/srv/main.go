@@ -48,7 +48,7 @@ func main() {
 	gin.SetMode(gin.ReleaseMode)
 	engine := gin.Default()
 
-	session.SetupService(service, engine, "sqlite3", "./ormus.db", -1, -1)
+	session.SetupService(&service, engine, "sqlite3", "./ormus.db", -1, -1)
 	// at this point you can override the crypto settings
 	// session.OverrideCrypto(...)
 

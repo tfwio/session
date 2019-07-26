@@ -129,8 +129,8 @@ func (f *FormSession) hasKeep() bool { return f.Keep != "" && (f.Keep == "true" 
 // SetupService sets up session service.
 //
 // Set saltSize or hashSize to -1 to persist internal defaults.
-func SetupService(value Service, engine *gin.Engine, dbsys, dbsrc string, saltSize, hashSize int) {
-	service = value
+func SetupService(value *Service, engine *gin.Engine, dbsys, dbsrc string, saltSize, hashSize int) {
+	service = *value
 	if engine != nil {
 		service.attachRoutesAndMiddleware(engine)
 		if service.CheckURIHandler == nil {
