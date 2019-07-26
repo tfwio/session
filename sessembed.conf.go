@@ -48,6 +48,7 @@ type (
 		// Unlike URICheck, we'll abort a response for any URI
 		// path provided to this list if user is not logged in.
 		URIEnforce      []string
+		VerboseCheck    bool
 		CheckURIHandler UnsafeURIHandler
 	}
 )
@@ -78,6 +79,7 @@ var (
 		URIEnforce:         []string{},
 		URICheck:           []string{},
 		// this is identical to default uri-handler (set CheckURIHandler to nil for default)
+		VerboseCheck:    false,
 		CheckURIHandler: unsafeURIHandlerRx,
 		FormSession:     FormSession{User: "user", Pass: "pass", Keep: "keep"},
 	}
