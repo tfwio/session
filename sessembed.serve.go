@@ -63,7 +63,7 @@ func (s *Service) sessMiddleware(g *gin.Context) {
 	g.Next() // (calling this probably isn't necessary)
 }
 
-const tfmt = "2016-01-02 03:04 PM"
+const tfmt = "2006-01-02 03:04 PM"
 
 // serveUserStatus serves JSON checking if a session exists,
 // persists, and a user exists.
