@@ -22,10 +22,9 @@ func (s *Service) CookieDefaults(cookieMonths int, httpOnly, isSecure bool) {
 //
 // Note: *Like `github.com/gogonic/gin`, we are applying `url.QueryEscape`
 // `value` stored to the cookie so be sure to UnEscape the value when retrieved.*
-func SetCookieDestroy(cli *gin.Context, name, value string) {
+func SetCookieDestroy(cli *gin.Context, name string) {
 	http.SetCookie(cli.Writer, &http.Cookie{
 		Name:     name,
-		Value:    url.QueryEscape(value),
 		MaxAge:   -1,
 		Path:     "/",
 		Secure:   service.CookieSecure,
