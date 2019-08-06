@@ -106,7 +106,7 @@ func (s *Service) serveLogout(g *gin.Context) {
 	sess, success := QueryCookie(sh, g)
 	if success {
 		// fmt.Printf("  ==> CLIENT COOKIE EXISTS; USER=%d\n", sess.UserID)
-		SetCookieDestroy(g, sh, sess.SessID)
+		SetCookieDestroy(g, sh)
 		if time.Now().Before(sess.Expires) {
 			// fmt.Printf("  --> NOT EXPIRED; USER=%d\n", sess.UserID)
 			g.JSON(http.StatusOK, &LogonModel{Action: actionLogout, Detail: "Session exists; logged out.", Status: true})
@@ -139,24 +139,17 @@ func (s *Service) serveLogin(g *gin.Context) {
 		j.Detail = "No user record."
 		j.Status = false
 
-	} else {
-		// We have a valid user;
-		sess, success := u.UserSession(sh, g)
-		if success {
-			// fmt.Println("  ==> FOUND USER, VALIDATING PW")
+	} else { // We have a valid user;
+
+		sess, success := u.UserSession(sh, g) // check for a existing session
+
+		if success { // user exists + session exists
 			if form.hasPass() {
 				if u.ValidatePassword(form.Pass) {
-					// fmt.Println("  ==> PW:GOOD")
 					sess.Refresh(false)
-					if form.hasKeep() {
-						sess.KeepAlive = true
-						SetCookieExpires(g, sh, sess.SessID, sess.Expires)
-					} else {
-						sess.KeepAlive = false
-						SetCookieSessOnly(g, sh, sess.SessID)
-					}
+					sess.KeepAlive = form.hasKeep()
 					sess.Save()
-					SetCookieSessOnly(g, sh+"_xo", u.Name)
+					sess.SetBrowserCookieFromSession(g, u.Name, sh)
 					j.Detail = "Logged in."
 					j.Status = true
 					j.Data = map[string]interface{}{"user": u.Name, "created": sess.Created, "expires": sess.Expires}
@@ -166,16 +159,23 @@ func (s *Service) serveLogin(g *gin.Context) {
 					j.Status = true
 				}
 			}
-		} else {
-			// There is no session for the user.
-			// this use case shouldn't exist since a session is created when a user is created!
-			// this should report success to spite the fact that its a failure.
-			// fmt.Println("  ==> DESTROY SESSION")
-			sess.Destroy(true)
-			SetCookieDestroy(g, sh, sess.SessID)
-			SetCookieDestroy(g, sh+"_xo", "")
-			j.Detail = "Session destroyed."
-			j.Status = true
+		} else { // user exists + no session exists
+
+			if ok, ss := u.CreateSession(g, sh, form.hasKeep()); ok {
+				ss.SetBrowserCookieFromSession(g, u.Name, sh)
+				j.Detail = "Logged in."
+				j.Status = true
+				j.Data = map[string]interface{}{"user": u.Name, "created": sess.Created, "expires": sess.Expires}
+			} else {
+				// This really shouldn't be occuring
+				// ---------------------------------------------------
+				sess.Destroy(true)
+				SetCookieDestroy(g, sh)
+				SetCookieDestroy(g, sh+"_xo")
+				j.Detail = "Session destroyed; We have a user but failed to create a session!"
+				j.Status = false
+			}
+
 		}
 	}
 	g.JSON(http.StatusOK, j)

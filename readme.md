@@ -7,94 +7,17 @@ so easily conforms to other data-systems.
 
 ----
 
-**limitations**
+**LIMITATIONS**
 
 - freshly brewed.
-- [*todo/feature*] One session on one client (browser session / IP) is allowed per User once initial session is created.  (can easily be modified)  
-  Will likely fix this soon.
-- theres no Unregister function/routeHandler!
+- theres no Unregister function or routeHandler!
 
 ----
 
-**getting started**
+**GET STARTED**
 
-this is the source code as found in the [server example](./examples/srv).
+See: [server example](./examples/srv).
 
-```golang
-package main
-
-import (
-	"fmt"
-	"net/http"
-
-	_ "github.com/jinzhu/gorm/dialects/sqlite"
-	_ "github.com/mattn/go-sqlite3"
-
-	"github.com/gin-gonic/gin"
-	"github.com/tfwio/session"
-)
-
-var (
-	service = session.Service{
-		AppID:              "sessions_demo",
-		Port:               ":5500",       // Port is used for
-		CookieHTTPOnly:     true,          // hymmm
-		CookieSecure:       false,         // we want to see em in the browser
-		KeySessionIsValid:   "is-valid",   // is also what is used by default if not provided
-		KeySessionIsChecked: "is-checked", // is also what is used by default if not provided
-		AdvanceOnKeepYear:  0,
-		AdvanceOnKeepMonth: 6,
-		AdvanceOnKeepDay:   0,
-		// if regexp matches (our default check/handler), the httpResponse is aborted
-		// with a simple message.
-		//
-		// you could just use a string array.
-		URIEnforce: session.WrapURIExpression("^/index/?$,^/this/?$,^/that"),
-		// if one of these matches, we pass (using gin) `gin.Client.Set("is-valid", true)`
-		// so that in our handler we can check its status (`c.Get("is-valid")`) and handle accordingly.
-		// The **actual** key used ("is-valid") is stored to `Service.KeySessionIsValid`.
-		URICheck:        []string{},
-		URIMatchHandler: nil, // use default
-		URIAbortHandler: nil, // use default
-		// defaults the requestHandlers use to look up form values.
-		FormSession:     session.FormSession{User: "user", Pass: "pass", Keep: "keep"},
-	}
-)
-
-//
-// we still need to provide some demo forms, however you can just use
-// get or post variables to view the xhr/json response(s).
-//
-// http://localhost:5500/login/?user=admin&pass=password
-// http://localhost:5500/login/?user=admin&pass=password&keep=true
-// http://localhost:5500/register/?user=admin&pass=password
-// http://localhost:5500/register/?user=admin&pass=password&keep=true
-// http://localhost:5500/stat/
-// http://localhost:5500/logout/
-//
-
-func main() {
-
-	// optional; ensure absolute (working) data source path for sqlite3
-	// configuration.DataSource, _ = filepath.Abs(configuration.DataSource)
-
-	gin.SetMode(gin.ReleaseMode)
-	engine := gin.Default()
-
-	session.SetupService(&service, engine, "sqlite3", "./ormus.db", -1, -1)
-	// at this point you can override the crypto settings
-	// session.OverrideCrypto(...)
-
-	// this "index" is defined in service.URIEnforce,
-	// so you must be logged in to view it.
-	engine.GET("/index/", func(g *gin.Context) {
-		g.String(http.StatusOK, "Hello")
-	})
-	fauxHost := fmt.Sprintf("127.0.0.1%s", service.Port)
-	fmt.Printf("using host: \"%s\"\n", fauxHost)
-	engine.Run(fauxHost)
-}
-```
 
 **dataset**
 
@@ -102,8 +25,8 @@ users table: `users: id name salt hash`
 
 sessions table: `sessions: id userid sessid host created expires cli-key keep-alive`
 
-* [host] value stores what is provided to the cookie name.  
-* [cli-key] is provided the client IP.
+* [host] value stores what is provided to the cookie name such as `<appname><port>`.  
+* [cli-key] is provided the client IP in base64.
 
 **response handlers**
 
@@ -114,13 +37,16 @@ current http response handlers:
 **middleware service configs**
 
 Regular expressions are used to validate URI path for two basic heuristics.
+There are two "Keys" that are configured in the enum type `Service`, namely
+`Service.KeySessionIsValid` and `Service.KeySessionIsChecked` which correspond
+to the following regular expression input `[]string` arrays:
 
-- `Service.URICheck []string`: Regular expressions supplied here will push a boolean
+- `Service.URICheck`: Regular expressions supplied here will push a boolean
   value into `gin.Context.Set(key,value)` and `.Get` dictionary indicating wether
   the response is valid.  A key "lookup" (`ctx.Get("lookup")`) value of false tells us
   that checking for a valid session wasn't required.  If true, then the (deault)
   "is-valid" key will report weather or not we have a valid session.
-- `Service.URIEnforce []string`: Regular expressions supplied here will, if we have
+- `Service.URIEnforce`: Regular expressions supplied here will, if we have
   a valid session, continue to serve content.  If there is no valid session then
   it will (by default settings) abort the httpRequest and report a simple string message.
 
