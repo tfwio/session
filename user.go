@@ -68,15 +68,10 @@ func (u *User) ByID(id int64) bool {
 
 // CreateSession Save a session into the sessions table.
 //
-// The method is written to utilize gin-gonic/gin `*gin.Context` as
+// (param: `r interface{}`) is to utilize gin-gonic/gin `*gin.Context` as
 // its suggested input interface given that we can use it to retrieve
-// the ClientIP() and store that value to our database in order to
+// the `ClientIP()` and store that value to our database in order to
 // validate a given user-session.
-//
-// Currently, a user is limited to one session (connection) on one client.
-//
-// FIXME: we should be checking if there is a existing record in sessions table
-// and re-using it for the user executing UPDATE as opposed to CREATE.
 func (u *User) CreateSession(r interface{}, host string, keepAlive bool) (bool, Session) {
 
 	t := time.Now()
