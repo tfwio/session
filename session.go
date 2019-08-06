@@ -4,6 +4,8 @@ package session
 
 import (
 	"time"
+
+	"github.com/gin-gonic/gin"
 )
 
 // Session represents users who are logged in.
@@ -48,6 +50,22 @@ func (s *Session) Refresh(save bool) {
 	if save {
 		s.Save()
 	}
+}
+
+// SetBrowserCookieFromSession makes two cookies.
+//
+// The first is the sessid based on the host (port/appname) which
+// is set to expire in 6 months (by default) if KeepAlive is true otherwise
+// will be set to expire when the browser is closed and
+// the second contains the name of the user and is set to expire when browser
+// is closed.
+func (s *Session) SetBrowserCookieFromSession(g *gin.Context, uname, sh string) {
+	if s.KeepAlive {
+		SetCookieExpires(g, sh, s.SessID, s.Expires)
+	} else {
+		SetCookieSessOnly(g, sh, s.SessID)
+	}
+	SetCookieSessOnly(g, sh+"_xo", uname)
 }
 
 // GetUser gets a user by the UserID stored in the Session.
