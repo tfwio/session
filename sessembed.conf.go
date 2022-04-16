@@ -155,11 +155,11 @@ func SetupService(value *Service, engine *gin.Engine, dbsys, dbsrc string, saltS
 		service.attachRoutesAndMiddleware(engine)
 
 		if service.URIMatchHandler == nil {
-			fmt.Fprintln(os.Stderr, "<session:URIMatchHandler> callback was nil; using default regexp validation.")
+			// fmt.Fprintln(os.Stderr, "<session:URIMatchHandler> callback was nil; using default regexp validation.")
 			service.URIMatchHandler = DefaultURIMatchHandler
 		}
 		if service.URIAbortHandler == nil {
-			fmt.Fprintln(os.Stderr, "<session:URIMatchHandler> callback was nil; using default abort handler.")
+			// fmt.Fprintln(os.Stderr, "<session:URIMatchHandler> callback was nil; using default abort handler.")
 			service.URIAbortHandler = DefaultURIAbortHandler
 		}
 	}

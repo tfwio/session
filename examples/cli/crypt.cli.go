@@ -24,14 +24,16 @@ package main
 import (
 	"flag"
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
-	"github.com/jinzhu/gorm"
-	_ "github.com/jinzhu/gorm/dialects/sqlite"
-	_ "github.com/mattn/go-sqlite3"
 	"github.com/tfwio/session"
+	"gorm.io/driver/sqlite"
+	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 const (
@@ -57,11 +59,19 @@ var (
 	//fvalid   = flag.String("V", "", "for validation and creation of a login profile.")
 	//fsalt    = flag.String("salt", "", "[optional] supply salt and hash to validate -V <pass> (or fallback to db).")
 	//fhash    = flag.String("hash", "", "[optional] supply salt and hash to validate -V <pass> (or fallback to db).")
+	newLogger = logger.New(
+		log.New(os.Stdout, "\r\n", log.LstdFlags), // io writer
+		logger.Config{
+			SlowThreshold:             time.Second,   // Slow SQL threshold
+			LogLevel:                  logger.Silent, // Log level
+			IgnoreRecordNotFoundError: true,          // Ignore ErrRecordNotFound error for logger
+			Colorful:                  false,         // Disable color,
+		})
 )
 
 func testDatabase() {
-	db, err := gorm.Open("sqlite3", *fdb)
-	defer db.Close()
+	db, err := gorm.Open(sqlite.Open(defaulutDataset), &gorm.Config{Logger: newLogger})
+	// defer db.Close()
 	if err != nil {
 		fmt.Printf("error loading empty database: %v\n", db)
 	} else {
@@ -85,23 +95,38 @@ func main() {
 	}
 
 	session.SetDefaults("sqlite3", *fdb, *fSaltLen, *fHashLen)
-	session.EnsureTableUsers()
-	session.EnsureTableSessions()
 
 	switch strings.ToLower(os.Args[1]) {
 	case "create":
 		// 1. create a user
 		// 2. create session for user
 		fCreate.Parse(os.Args[2:])
+
 		if len(*fcPass) > 4 && len(*fcUser) > 3 {
 			u := session.User{}
+			// s := session.Session{}
 			if *fcSess {
-				println("- Sesssion generation requested")
+				println("- session generation requested")
 			}
-			u.Create(*fcUser, *fcPass)
-			fmt.Printf("%v\n", u)
-			b, s := u.CreateSession(nil, "cli-example-app", false)
-			fmt.Printf("success: %v; session=%v\n", b, s)
+			// attempt to create the user?
+			if xr := u.Create_CheckErr(*fcUser, *fcPass); int(xr) == 0 {
+				fmt.Printf("Create User: {\n  Name: %s\n  Hash: %s,\n  Salt: %s,\n  ID: %v\n}\n", u.Name, u.Hash, u.Salt, u.ID)
+				if xr != 0 {
+					fmt.Printf("error: %s\n", xr)
+				}
+				if success, s := u.CreateSession(nil, "cli-example-app", false); !success {
+					fmt.Printf("{\n  success:         %v;\n  session-id:      %s;\n  session-client:  %s,\n  session-host:    %s\n  user-id:       %v\n}\n", !success, s.SessID, s.Client, s.Host, s.UserID)
+				} else {
+					fmt.Printf("!{\n  success:         %v;\n  session-id:      %s;\n  session-client:  %s,\n  session-host:    %s\n  user-id:       %v\n}\n", !success, s.SessID, s.Client, s.Host, s.UserID)
+				}
+			} else {
+				fmt.Printf("- User \"%s\" exists\n", u.Name)
+				if success, s := u.CreateSession(nil, "cli-example-app", false); !success {
+					fmt.Printf("{\n  success:         %v;\n  session-id:      %s;\n  session-client:  %s,\n  session-host:    %s\n  user-id:       %v\n}\n", !success, s.SessID, s.Client, s.Host, s.UserID)
+				} else {
+					// fmt.Printf("!{\n  success:         %v;\n  session-id:      %s;\n  session-client:  %s,\n  session-host:    %s\n  user-id:       %v\n}\n", !success, s.SessID, s.Client, s.Host, s.UserID)
+				}
+			}
 		} else {
 			fmt.Printf("- username %s; pass %s\n", *fcUser, *fcPass)
 			println("- username must be > len(3) chars long")
@@ -136,8 +161,9 @@ func List() {
 	sessions, count := session.ListSessions()
 	fmt.Printf("--> found %d entries\n", count)
 	for _, x := range sessions {
-		fmt.Printf("--> '%s'\n  CRD: %s\n  EXP: %s\n  SID: %s\n",
+		fmt.Printf("--> '%s'\n  UserID: %v\n  CRD: %s\n  EXP: %s\n  SID: %s\n",
 			usermap[x.UserID].Name,
+			x.UserID,
 			x.Created.Format("20060102_1504.005"),
 			x.Expires.Format("20060102_1504.005"),
 			x.SessID)

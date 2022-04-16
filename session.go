@@ -3,6 +3,7 @@
 package session
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -91,9 +92,9 @@ func EnsureTableSessions() {
 	var s Session
 	db, _ := iniK("error(ensure-table-sessions) loading db; (expected)\n")
 	// if !e {
-	defer db.Close()
-	if !db.HasTable(s) {
-		db.CreateTable(s)
+	// defer db.Close()
+	if !db.Migrator().HasTable(s) {
+		db.Migrator().CreateTable(s)
 	}
 	// }
 }
@@ -104,9 +105,23 @@ func (s *Session) Save() bool {
 	if err {
 		return false
 	}
-	defer db.Close()
+	//defer db.Close()
 	db.Save(s)
 	return db.RowsAffected > 0
+}
+
+func (s *Session) HasSessionForUser(u *User) (bool, error) {
+	db, err := iniC("error(validate-session) loading database\n")
+	if err {
+		fmt.Printf("session table doesn't exist?\n")
+		return false, db.Error
+	}
+	if err1 := db.Where("[user_id] = ?", u.ID).First(&s).Error; err1 != nil {
+		fmt.Printf("session find error?: %s\n", err1.Error())
+		return false, err1
+	}
+	// fmt.Printf("we find [%v]\n", s)
+	return true, nil
 }
 
 // ListSessions returns a list of all sessions.
@@ -116,7 +131,7 @@ func (s *Session) Save() bool {
 func ListSessions() ([]Session, int) {
 	sessions := []Session{}
 	db, err := iniC("error(session-cli-list) loading db\n")
-	defer db.Close()
+	//defer db.Close()
 	if !err {
 		db.Find(&sessions)
 	}

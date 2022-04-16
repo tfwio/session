@@ -7,6 +7,15 @@ so easily conforms to other data-systems.
 
 ----
 
+2022-04-16  
+UPDATED to conform to quite a few updates to [GORM]
+
+-  update gorm package references (to `gorm.io/driver/sqlite` and `gorm.io/gorm`)
+- there were a few code semantic updates such as how gorm now handles logging and lack of need to `.Close()` a given iteration memory space(?).
+
+
+----
+
 **LIMITATIONS**
 
 - freshly brewed.
@@ -79,6 +88,6 @@ func DefaultURIAbortHandler(ctx *gin.Context, ename string) {
 
 
 
-[GORM]:                         https://github.com/jinzhu/gorm
+[GORM]:                         https://gorm.io/
 [github.com/gin-gonic/gin]:     https://github.com/gin-gonic/gin
 

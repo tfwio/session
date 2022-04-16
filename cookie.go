@@ -121,9 +121,11 @@ func QueryCookieValidate(cookieName string, client *gin.Context) bool {
 	if err {
 		return false
 	}
-	db.LogMode(dataLogging)
+
+	// db.LogMode(dataLogging)
 	sess := Session{}
-	defer db.Close()
+
+	// defer db.Close()
 	db.First(&sess, "[cli-key] = ? AND [host] = ? AND [sessid] = ?", clistr, cookieName, sessid)
 	// fmt.Printf("SESS\nsess: %s\ncook: %s\n", sess.SessID, sessid)
 	// fmt.Printf("EXPR\nsess: %v\ncook: %v\n", sess.Expires, cookie.Expires)
@@ -162,8 +164,8 @@ func QueryCookie(host string, client *gin.Context) (Session, bool) {
 	if err {
 		return sess, false
 	}
-	db.LogMode(dataLogging)
-	defer db.Close()
+	// db.LogMode(dataLogging)
+	// defer db.Close()
 	db.First(&sess, "[cli-key] = ? AND [host] = ? AND [sessid] = ?", clistr, host, cookiesess)
 	// fmt.Printf("  --> SESSID MATCH: %v\n", sess.SessID == cookiesess)
 	return sess, sess.SessID == cookiesess

@@ -2,20 +2,42 @@ package session
 
 import (
 	"fmt"
+	"log"
+	"os"
+	"time"
 
-	"github.com/jinzhu/gorm"
+	"gorm.io/driver/sqlite"
+	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
+
+var (
+	newLogger = logger.New(
+		log.New(os.Stdout, "\r\n", log.LstdFlags), // io writer
+		logger.Config{
+			SlowThreshold:             time.Second,   // Slow SQL threshold
+			LogLevel:                  logger.Silent, // Log level
+			IgnoreRecordNotFoundError: true,          // Ignore ErrRecordNotFound error for logger
+			Colorful:                  true,          // Disable color
+		})
+)
+
+//
+// https://github.com/glebarez/sqlite
+//
 
 // close on error (no message)
 //
 // As a precaution, do not attempt to perform complex or multiple
 // database operations — or rather perhaps, never load and attempt
 // to work with more than one loaded (.Open) database connection
+//
+// returns true on error
 func dbinit() (*gorm.DB, bool) {
-	db, err := gorm.Open(datasys, datasource)
+	db, err := gorm.Open(sqlite.Open(datasource), &gorm.Config{Logger: newLogger})
 	result := false
 	if err != nil {
-		db.Close()
+		//db.Close()
 		result = true
 	}
 	return db, result
@@ -26,8 +48,10 @@ func dbinit() (*gorm.DB, bool) {
 // As a precaution, do not attempt to perform complex or multiple
 // database operations — or rather perhaps, never load and attempt
 // to work with more than one loaded (.Open) database connection
+//
+// returns true on error
 func dbinik() (*gorm.DB, bool) {
-	db, err := gorm.Open(datasys, datasource)
+	db, err := gorm.Open(sqlite.Open(datasource), &gorm.Config{Logger: newLogger})
 	result := false
 	if err != nil {
 		result = true
@@ -40,6 +64,8 @@ func dbinik() (*gorm.DB, bool) {
 // As a precaution, do not attempt to perform complex or multiple
 // database operations — or rather perhaps, never load and attempt
 // to work with more than one loaded (.Open) database connection
+//
+// returns true on error
 func iniC(format string, msg ...interface{}) (*gorm.DB, bool) {
 	return inik(true, format, msg...)
 }
@@ -49,6 +75,8 @@ func iniC(format string, msg ...interface{}) (*gorm.DB, bool) {
 // As a precaution, do not attempt to perform complex or multiple
 // database operations — or rather perhaps, never load and attempt
 // to work with more than one loaded (.Open) database connection
+//
+// returns true on error
 func iniK(format string, msg ...interface{}) (*gorm.DB, bool) {
 	return inik(false, format, msg...)
 }
@@ -58,15 +86,20 @@ func iniK(format string, msg ...interface{}) (*gorm.DB, bool) {
 // As a precaution, do not attempt to perform complex or multiple
 // database operations — or rather perhaps, never load and attempt
 // to work with more than one loaded (.Open) database connection
+//
+// returns true on error
 func inik(closeOnError bool, format string, msg ...interface{}) (*gorm.DB, bool) {
 	db, e := dbinik()
+	result := false
 	if e {
 		if format != "" {
-			fmt.Printf(format, msg...)
+			fmt.Printf("well then: "+format, msg...)
 		}
-		if closeOnError {
-			db.Close()
-		}
+		fmt.Printf("error: %v\n", e)
+		result = true
+		// if closeOnError {
+		// 	db.Close()
+		// }
 	}
-	return db, e
+	return db, result
 }

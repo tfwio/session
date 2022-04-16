@@ -1,10 +1,12 @@
 package session
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 // User structure
@@ -25,7 +27,7 @@ func UserGetList() map[int64]User {
 	var users []User
 	usermap := make(map[int64]User)
 	db, err := iniC("error(user-get-list) loading database\n")
-	defer db.Close()
+	//defer db.Close()
 	if !err {
 		db.Find(&users)
 		// fmt.Printf("- found %d entries\n", len(users))
@@ -40,26 +42,31 @@ func UserGetList() map[int64]User {
 
 // ByName gets a user by [name].
 // If `u` properties are set, then those are defaulted in FirstOrInit
+//
+// return true on success
 func (u *User) ByName(name string) bool {
-	fmt.Printf("--> looking for %s\n", name)
-
+	// fmt.Printf("ByName(%s)\n", name)
 	db, err := iniC("error(user-by-name) loading database\n")
 	result := false
-	defer db.Close()
+	//defer db.Close()
 	if !err {
-		db.Where("[user] = ?", name).First(u)
+		if err1 := db.Where("[user] = ?", name).First(&u).Error; err1 != nil {
+			if errors.Is(err1, gorm.ErrRecordNotFound) && false { // THIS PRINT ERROR IS IGNORED
+				println("ERROR: record not found")
+			}
+		}
 		if u.Name == name {
 			result = true
 		}
 	}
-	// fmt.Printf("!-> FOUND %s, %d\n", u.Name, u.ID)
+	// fmt.Printf("!-> FOUND %s, %d, result-found-success: %v\n", u.Name, u.ID, result)
 	return result
 }
 
 // ByID gets a user by [id].
 func (u *User) ByID(id int64) bool {
 	db, err := iniC("error(user-by-id) loading database\n")
-	defer db.Close()
+	//defer db.Close()
 	if !err {
 		db.FirstOrInit(u, User{ID: id})
 	}
@@ -72,10 +79,21 @@ func (u *User) ByID(id int64) bool {
 // its suggested input interface given that we can use it to retrieve
 // the `ClientIP()` and store that value to our database in order to
 // validate a given user-session.
+//
+// returns true on error
 func (u *User) CreateSession(r interface{}, host string, keepAlive bool) (bool, Session) {
 
 	t := time.Now()
-	result := false
+	result := true
+
+	if service == nil {
+		service = DefaultService()
+	}
+	// println("-- setup session data (create-session)")
+	// println("==================")
+	// fmt.Printf("Host: %s, UserID: %v, keepAlive: %v, salt-size: %v, created: %s\n", host, u.ID, keepAlive, defaultSaltSize, t.Local().String())
+	// println("---------")
+	// fmt.Printf("Service: %v, r (interface): %v\n", service, r)
 	sess := Session{
 		Host:      host,
 		UserID:    u.ID,
@@ -85,55 +103,122 @@ func (u *User) CreateSession(r interface{}, host string, keepAlive bool) (bool, 
 		Expires:   service.AddDate(t),
 	}
 
+	// acceptable client is of type: gin.Context, nil and string
+	// looks like we're giving it nil.
+	// anyways, attempt to load the nil client's name.
+	// host?
 	sess.Client = getClientString(r)
+	// fmt.Printf("My Client String: %s\n", sess.Client)
+	// println("---------")
 
-	db, err := iniC("error(create-session) loading database\n")
+	// guess we're making sure the database exists again?
 
-	defer db.Close()
-	if !err {
-		db.Create(&sess)
-		if db.RowsAffected == 1 {
-			result = true
+	//defer db.Close()
+	var sx = Session{}
+	if berry, xs := sx.HasSessionForUser(u); !berry {
+		if errors.Is(xs, gorm.ErrRecordNotFound) { // lets just pretend this didn't happen
+			println("--- ERROR: record not found")
+			db, _ := iniC("error(user-create-session) loading database\n")
+			println("--- CREATING SESSION")
+
+			mrr := db.Create(&sess)
+			if mrr.Error != nil {
+				println("ERROR: error creating session data.", mrr.Error.Error())
+			}
+
+			if err := mrr.Error; err != nil {
+				fmt.Printf("ERROR: %s\n", err.Error())
+				println("Session creation ERROR", u.Name, u.ID)
+			} else if mrr.RowsAffected == 1 {
+				println("- SESSION CREATED.", u.Name, u.ID)
+				result = false
+			} else {
+				fmt.Printf("so what now? %v %v\n", db.RowsAffected, sess.ID)
+			}
+
+		} else {
+			println("--- ERROR: unknown error.")
+		}
+	} else {
+		if sx.IsValid() {
+			fmt.Printf("- Session EXPIRES %s!\n", sx.Expires)
+		} else {
+			fmt.Printf("- Session EXPIRED of %s!\n", sx.Expires)
 		}
 	}
 
 	return result, sess
 }
 
+type UserErrorConst int
+
+const (
+	Perfection UserErrorConst = iota
+	HasName
+	LenName
+	LenPass
+	CheckDB UserErrorConst = -1
+)
+
+func (u UserErrorConst) String() string {
+	switch u {
+	case CheckDB:
+		return "GORM_ERROR_Table-User: check database or db path"
+	case Perfection:
+		return "GORM_ERROR_Table-User: Perfect (as in no errors to report)"
+	case HasName:
+		return "GORM_ERROR_Table-User: \"name\" exists"
+	case LenName:
+		return "GORM_ERROR_Table-User: check name-length"
+	case LenPass:
+		return "GORM_ERROR_Table-User: check pass-length"
+	default:
+		return "GORM_ERROR_Table-User: how in the hell did you get here?"
+	}
+}
+
 // Create attempts to create a user and returns success or failure.
 // If a user allready exists results in failure.
 //
 // Returns
-// (-1) `db.Open`,
-// (2) `User.Name` or `User.Pass` < `len(5)`
-// (1) `User.Name` exists
-// (0) on success
+func (u *User) Create_CheckErr(name string, pass string) UserErrorConst {
+	return UserErrorConst(u.Create(name, pass))
+}
+
+// Create attempts to create a user and returns success or failure.
+// If a user allready exists results in failure.
+//
+// Returns
 func (u *User) Create(name string, pass string) int {
 
 	if len(name) < 5 {
-		return 2
+		return int(LenName)
 	}
 	if len(pass) < 5 {
-		return 2
+		return int(LenPass)
 	}
 
 	if u.ByName(name) {
-		return 1
+		return int(HasName)
 	}
 
+	// make if no table
 	db, err := iniC("error(user-create): loading database\n")
 	if err {
-		return -1
+		return int(CheckDB)
 	}
 
+	// salt salt hash hash
 	bsalt := NewSaltCSRNG(defaultSaltSize)
 	u.Name = name
 	u.Salt = bytesToBase64(bsalt)
 	u.Hash = bytesToBase64(GetPasswordHash(pass, bsalt))
 	// fmt.Printf("--> %s, %s, %v\n", u.Name, pass, u.Salt)
 
-	defer db.Close()
-	db.Create(u)
+	// defer db.Close()
+	if err := db.Create(u).Error; err != nil {
+		fmt.Printf("ERROR: %s\n", err.Error())
+	}
 
 	return 0
 }
@@ -153,6 +238,8 @@ func (u *User) validate(pass string) bool {
 // ValidatePassword checks against a provided salt and hash.
 // we use the user's [name] to find the table-record
 // and then validate the password.
+//
+// return false on error
 func (u *User) ValidatePassword(pass string) bool {
 	// fmt.Println("==> ValidatePassword")
 	// open the database
@@ -163,18 +250,20 @@ func (u *User) ValidatePassword(pass string) bool {
 
 	result := false
 	tempUser := User{Name: "really?"}
-	db.LogMode(dataLogging)
+	//db.LogMode(dataLogging)
 	db.FirstOrInit(&tempUser, User{Name: u.Name})
 
 	if db.RowsAffected == 0 && tempUser.Name != u.Name {
-		db.Close()
+		//db.Close()
 		// fmt.Println("Record not found")
 		return false
 	}
+	fmt.Printf("User-Name: %s, id: %v\n", u.Name, u.ID)
 
-	defer db.Close()
+	//defer db.Close()
 	if tempUser.Name != u.Name {
 		// fmt.Printf("- no user found. %v\n", tempUser)
+		// may as well just return false here, right?
 	} else {
 		result = tempUser.validate(pass)
 	}
@@ -197,8 +286,8 @@ func (u *User) UserSession(host string, client *gin.Context) (Session, bool) {
 	if err {
 		return sess, false
 	}
-	db.LogMode(dataLogging)
-	defer db.Close()
+	//db.LogMode(dataLogging)
+	//defer db.Close()
 	db.First(&sess, "[cli-key] = ? AND [host] = ? AND [user_id] = ?", clistr, host, u.ID)
 	// fmt.Printf("  --> MATCH: %v\n", sess.UserID == u.ID)
 	return sess, sess.UserID == u.ID
@@ -238,9 +327,9 @@ func EnsureTableUsers() {
 	var u User
 	db, _ := iniK("error(ensure-table-users) loading db (perhaps expected)\n")
 	// if !e {
-	defer db.Close()
-	if !db.HasTable(u) {
-		db.CreateTable(u)
+	//defer db.Close()
+	if !db.Migrator().HasTable(u) {
+		db.Migrator().CreateTable(u)
 	}
 	// }
 }

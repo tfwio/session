@@ -4,8 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
-	_ "github.com/jinzhu/gorm/dialects/sqlite"
-	_ "github.com/mattn/go-sqlite3"
+	_ "gorm.io/driver/sqlite"
 
 	"github.com/gin-gonic/gin"
 	"github.com/tfwio/session"
